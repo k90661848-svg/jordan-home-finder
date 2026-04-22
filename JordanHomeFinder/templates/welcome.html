@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Welcome to Masar | مسار</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  {% include 'partials/head_favicon.html' %}
+</head>
+<body>
+  <main class="welcome-page" role="main">
+    <div class="welcome-card">
+      <h1 class="welcome-title">Welcome to Masar</h1>
+      <p class="welcome-subtitle">
+        Your complete property planning and financial journey in one intelligent platform.
+      </p>
+      <p class="theme-small" style="margin:0 0 .5rem; font-weight:600; color:var(--text);">Masar helps you:</p>
+      <ul class="welcome-list">
+        <li>Discover properties</li>
+        <li>Plan financing</li>
+        <li>Compare scenarios</li>
+        <li>Track your readiness</li>
+        <li>Make confident decisions</li>
+      </ul>
+      <div class="welcome-actions">
+        <a href="{{ url_for('signup') }}" class="btn btn-primary">Yes, Let's Start</a>
+        <button type="button" class="btn btn-secondary" id="not-yet-btn" aria-label="Not yet">Not Yet</button>
+      </div>
+    </div>
+  </main>
+
+  <div class="welcome-modal" id="welcome-modal" role="dialog" aria-labelledby="modal-title" aria-modal="true" aria-hidden="true">
+    <div class="welcome-modal-inner">
+      <h2 id="modal-title">No worries</h2>
+      <p>
+        When you're ready to plan your future home, we'll be here for you.
+      </p>
+      <button type="button" class="btn" id="modal-back-btn">Take Me Back</button>
+    </div>
+  </div>
+
+  <script>
+  (function() {
+    var btn = document.getElementById('not-yet-btn');
+    var modal = document.getElementById('welcome-modal');
+    var backBtn = document.getElementById('modal-back-btn');
+    if (btn) btn.addEventListener('click', function() {
+      modal.classList.add('open');
+      modal.setAttribute('aria-hidden', 'false');
+      backBtn.focus();
+    });
+    function closeModal() {
+      modal.classList.remove('open');
+      modal.setAttribute('aria-hidden', 'true');
+    }
+    if (backBtn) backBtn.addEventListener('click', closeModal);
+    if (modal) modal.addEventListener('click', function(e) { if (e.target === modal) closeModal(); });
+    document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeModal(); });
+  })();
+  </script>
+</body>
+</html>

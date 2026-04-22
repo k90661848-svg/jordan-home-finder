@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Masar | مسار لدارك — Plan: {{ property.title }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    .finance-form { max-width: 500px; padding: 2rem 0; }
+    .finance-form h1 { font-size: 1.5rem; margin-bottom: 0.5rem; }
+    .finance-form .prop-price { font-size: 1.25rem; font-weight: 700; color: var(--accent); margin-bottom: 1.5rem; }
+    .form-group { margin-bottom: 1rem; }
+    .form-group label { display: block; font-weight: 500; margin-bottom: 0.35rem; color: var(--text); }
+    .form-group input { width: 100%; padding: 0.6rem; border-radius: 8px; border: 1px solid var(--border); box-sizing: border-box; }
+    .btn-submit { background: var(--accent); color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 1rem; }
+    .btn-submit:hover { background: var(--primary2); }
+    .back-link { display: inline-block; margin-bottom: 1rem; color: var(--accent); text-decoration: none; }
+    .back-link:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="nav">
+    <div class="container nav-inner">
+      <a class="brand" href="{{ url_for('home_page') }}">
+        <div class="brand-badge">M</div>
+        <div>
+          <span class="brand-name">Masar</span>
+          <small>مسار لدارك</small>
+        </div>
+      </a>
+      <span class="pill">Financial Plan</span>
+    </div>
+  </div>
+
+  <div class="container finance-form">
+    <a href="{{ url_for('property_detail_page', property_id=property.id) }}" class="back-link">← Back to property</a>
+    <h1>{{ property.title }}</h1>
+    <div class="prop-price">{{ "{:,}".format(property.price_jod) }} JOD</div>
+
+    <form method="post" action="{{ url_for('finance_property', property_id=property.id) }}">
+      <div class="form-group">
+        <label for="down_pct">Down payment (%)</label>
+        <input type="number" id="down_pct" name="down_pct" value="20" min="0" max="100" step="5" required>
+      </div>
+      <div class="form-group">
+        <label for="rate_pct">Interest rate (%)</label>
+        <input type="number" id="rate_pct" name="rate_pct" value="7.5" min="1" max="20" step="0.25" required>
+      </div>
+      <div class="form-group">
+        <label for="years">Loan term (years)</label>
+        <input type="number" id="years" name="years" value="25" min="1" max="30" step="1" required>
+      </div>
+      <div class="form-group">
+        <label for="scenario_name">Scenario name (optional)</label>
+        <input type="text" id="scenario_name" name="scenario_name" placeholder="{{ property.title[:30] }} Plan">
+      </div>
+      <button type="submit" class="btn-submit" name="action" value="calc">Calculate plan</button>
+      <button type="submit" class="btn-submit" name="save" value="1" style="margin-left:0.5rem; background: var(--primary2);">Calculate & save</button>
+    </form>
+
+    <!-- Loan Calculator (client-side, independent of form) -->
+    <div class="loan-calc-block" style="margin-top: 2.5rem; padding-top: 2rem; border-top: 1px solid var(--border);">
+      <h2 style="font-size: 1.25rem; margin: 0 0 1rem; color: var(--text);">💰 Loan Calculator</h2>
+      <p style="color: var(--muted); margin: 0 0 1rem; font-size: 0.95rem;">Adjust sliders or use +/- to see monthly payment and total repayment. Pre-filled from property price and down payment.</p>
+
+      <div class="loan-calc-row">
+        <label>Loan amount (JD)</label>
+        <div class="loan-calc-controls">
+          <button type="button" id="loan-calc-amount-minus" aria-label="Decrease">−</button>
+          <input type="range" id="loan-calc-amount" min="500" max="2000000" step="5000">
+          <input type="number" id="loan-calc-amount-val" min="500" max="2000000" step="5000" class="loan-calc-num">
+          <button type="button" id="loan-calc-amount-plus" aria-label="Increase">+</button>
+        </div>
+      </div>
+
+      <div class="loan-calc-row">
+        <label>Loan period (years)</label>
+        <div class="loan-calc-controls">
+          <button type="button" id="loan-calc-years-minus" aria-label="Decrease">−</button>
+          <input type="range" id="loan-calc-years" min="1" max="30" step="1">
+          <input type="number" id="loan-calc-years-val" min="1" max="30" step="1" class="loan-calc-num">
+          <button type="button" id="loan-calc-years-plus" aria-label="Increase">+</button>
+        </div>
+      </div>
+
+      <div class="loan-calc-row">
+        <label>Interest rate (% yearly)</label>
+        <div class="loan-calc-controls">
+          <button type="button" id="loan-calc-interest-minus" aria-label="Decrease">−</button>
+          <input type="range" id="loan-calc-interest" min="0" max="25" step="0.25">
+          <input type="number" id="loan-calc-interest-val" min="0" max="25" step="0.25" class="loan-calc-num">
+          <button type="button" id="loan-calc-interest-plus" aria-label="Increase">+</button>
+        </div>
+      </div>
+
+      <div class="loan-calc-results">
+        <p><strong>Calculated at:</strong> <span id="loan-calc-calculated">7.99% yearly interest</span></p>
+        <p><strong>Monthly payment:</strong> <span id="loan-calc-monthly">JD 0</span></p>
+        <p><strong>Estimated total repayment:</strong> <span id="loan-calc-total">JD 0</span></p>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    .loan-calc-block { background: var(--card); border-radius: var(--radius); padding: 1.5rem; border: 1px solid var(--border); box-shadow: var(--shadow); }
+    .loan-calc-row { margin-bottom: 1.25rem; }
+    .loan-calc-row label { display: block; font-weight: 500; margin-bottom: 0.4rem; color: var(--text); }
+    .loan-calc-controls { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+    .loan-calc-controls input[type="range"] { flex: 1; min-width: 100px; }
+    .loan-calc-controls .loan-calc-num { width: 100px; padding: 0.4rem; border-radius: 8px; border: 1px solid var(--border); }
+    .loan-calc-controls button { width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); cursor: pointer; font-size: 1.2rem; font-weight: 600; color: var(--text); }
+    .loan-calc-controls button:hover { background: var(--accent); color: white; border-color: var(--accent); }
+    .loan-calc-results { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+    .loan-calc-results p { margin: 0.5rem 0; }
+    .loan-calc-results span { color: var(--accent); font-weight: 600; }
+  </style>
+
+  <script src="{{ url_for('static', filename='loan_calc.js') }}"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      var price = {{ property.price_jod or 0 }};
+      if (typeof window.LoanCalc !== 'undefined') {
+        window.LoanCalc.init({
+          propertyPrice: price || 2000,
+          downPct: 20,
+          downPctInputId: 'down_pct',
+          yearsDefault: 20,
+          interestDefault: 7.99
+        });
+      }
+    });
+  </script>
+</body>
+</html>

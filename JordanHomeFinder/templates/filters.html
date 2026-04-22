@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Masar | مسار لدارك — Smart Filters</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  {% include 'partials/head_favicon.html' %}
+  <style>
+    .filters-container { padding: 2rem 0; display: grid; grid-template-columns: 280px 1fr; gap: 2rem; }
+    @media (max-width: 768px) { .filters-container { grid-template-columns: 1fr; } }
+    .filters-sidebar {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+      height: fit-content;
+      position: sticky;
+      top: 80px;
+    }
+    .filters-sidebar h2 { margin-top: 0; font-size: 1.25rem; color: var(--text); }
+    .filter-group { margin-bottom: 1.25rem; }
+    .filter-group label { display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text); font-size: 0.9rem; }
+    .filter-group input, .filter-group select {
+      width: 100%;
+      padding: 0.5rem 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.9rem;
+      box-sizing: border-box;
+    }
+    .filter-group input:focus, .filter-group select:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--ring);
+    }
+    .btn-apply {
+      width: 100%;
+      background: var(--accent);
+      color: white;
+      padding: 0.75rem;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 1rem;
+      font-size: 1rem;
+    }
+    .btn-apply:hover { background: var(--primary2); }
+    .btn-clear {
+      width: 100%;
+      background: var(--bg);
+      color: var(--muted);
+      padding: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 0.5rem;
+      font-size: 0.9rem;
+    }
+    .results-area { min-height: 300px; }
+    .results-header { margin-bottom: 1.5rem; }
+    .results-header h2 { font-size: 1.5rem; margin: 0 0 0.5rem; color: var(--text); }
+    .results-count { color: var(--muted); font-size: 1rem; }
+    .results-grid { display: grid; gap: 1.5rem; }
+    .filter-result-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      box-shadow: var(--shadow);
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+    }
+    .filter-result-card img {
+      width: 140px;
+      height: 100px;
+      object-fit: cover;
+      border-radius: 8px;
+      flex-shrink: 0;
+    }
+    .filter-result-placeholder {
+      width: 140px; height: 100px;
+      background: linear-gradient(135deg, var(--primary2), var(--accent));
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      color: white; font-size: 1.5rem;
+      flex-shrink: 0;
+    }
+    .filter-result-card h3 { margin: 0 0 0.35rem; font-size: 1.1rem; color: var(--text); }
+    .filter-result-card .price { font-weight: 700; color: var(--accent); margin-bottom: 0.25rem; }
+    .filter-result-card .meta { font-size: 0.9rem; color: var(--muted); margin-bottom: 0.5rem; }
+    .filter-result-card a { color: var(--accent); font-weight: 600; text-decoration: none; font-size: 0.9rem; }
+    .filter-result-card a:hover { text-decoration: underline; }
+    .loading { color: var(--muted); font-style: italic; }
+    .empty-state { color: var(--muted); padding: 2rem; text-align: center; }
+    .filter-afford { display: inline-block; margin-bottom: 0.35rem; padding: 0.2rem 0.5rem; border-radius: 8px; font-size: 0.8rem; font-weight: 600; }
+    .filter-afford-ok { background: rgba(34,197,94,.15); color: #166534; }
+    .filter-afford-stretch { background: rgba(245,158,11,.15); color: #92400e; }
+    .filter-afford-above { background: rgba(239,68,68,.12); color: #991b1b; }
+  </style>
+</head>
+<body>
+  {% include 'partials/nav_global.html' %}
+
+  <div class="container filters-container">
+    <aside class="filters-sidebar">
+      <h2>Filters</h2>
+      <form id="filterForm">
+        <div class="filter-group">
+          <label for="location">Location</label>
+          <select id="location" name="location">
+            <option value="">Any</option>
+            <option value="Abdoun">Abdoun</option>
+            <option value="Dabouq">Dabouq</option>
+            <option value="Sweifieh">Sweifieh</option>
+            <option value="Khalda">Khalda</option>
+            <option value="Abdali">Abdali</option>
+            <option value="Deir Ghbar">Deir Ghbar</option>
+            <option value="Airport Road">Airport Road</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="category">Category</label>
+          <select id="category" name="category">
+            <option value="">Any</option>
+            <option value="residential">Residential</option>
+            <option value="commercial">Commercial</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="type">Property type</label>
+          <select id="type" name="type">
+            <option value="">Any</option>
+            <option value="apartment">Apartment</option>
+            <option value="villa">Villa</option>
+            <option value="office">Office</option>
+            <option value="retail">Retail</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="min_price">Min price (JOD)</label>
+          <input type="number" id="min_price" name="min_price" placeholder="e.g. 50000" min="0" step="1000">
+        </div>
+        <div class="filter-group">
+          <label for="max_price">Max price (JOD)</label>
+          <input type="number" id="max_price" name="max_price" placeholder="e.g. 300000" min="0" step="1000">
+        </div>
+        <div class="filter-group">
+          <label for="bedrooms">Bedrooms</label>
+          <select id="bedrooms" name="bedrooms">
+            <option value="">Any</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5+</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="has_images">Show</label>
+          <select id="has_images" name="has_images">
+            <option value="true">With photos only</option>
+            <option value="all">All properties</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="sort_by">Sort by</label>
+          <select id="sort_by" name="sort_by">
+            <option value="price_asc">Price: Low to High</option>
+            <option value="price_desc">Price: High to Low</option>
+          </select>
+        </div>
+        <button type="submit" class="btn-apply">Search database</button>
+        <button type="button" class="btn-clear" onclick="document.getElementById('filterForm').reset(); fetchResults();">Clear</button>
+      </form>
+    </aside>
+
+    <div class="results-area">
+      <div class="results-header">
+        <h2>Results</h2>
+        <p class="results-count" id="resultsCount">Loading from property database...</p>
+      </div>
+      <div id="resultsGrid" class="results-grid"></div>
+    </div>
+  </div>
+
+  <script>
+    const API_SEARCH = '/api/search';
+
+    function buildQuery() {
+      const f = document.getElementById('filterForm');
+      const params = new URLSearchParams();
+      const loc = f.location.value?.trim();
+      const cat = f.category.value?.trim();
+      const typ = f.type.value?.trim();
+      const minP = f.min_price.value;
+      const maxP = f.max_price.value;
+      const beds = f.bedrooms.value;
+      const hasImg = f.has_images.value;
+      const sort = f.sort_by.value;
+      if (loc) params.set('location', loc);
+      if (cat) params.set('category', cat);
+      if (typ) params.set('type', typ);
+      if (minP) params.set('min_price', minP);
+      if (maxP) params.set('max_price', maxP);
+      if (beds) params.set('bedrooms', beds);
+      if (hasImg === 'all') params.set('has_images', 'false');
+      if (sort) params.set('sort_by', sort);
+      return params.toString();
+    }
+
+    const userMaxMonthly = {{ max_monthly|tojson if max_monthly is not none else 'null' }};
+    function affordabilityBadge(estMonthly) {
+      if (!userMaxMonthly || userMaxMonthly <= 0) return '';
+      if (estMonthly <= userMaxMonthly * 0.28) return '<span class="filter-afford filter-afford-ok">Within Budget</span>';
+      if (estMonthly <= userMaxMonthly) return '<span class="filter-afford filter-afford-stretch">Stretch</span>';
+      return '<span class="filter-afford filter-afford-above">Above Budget</span>';
+    }
+    function renderProperty(p) {
+      const img = p.images && p.images.length > 0
+        ? `<img src="/static/images/${p.images[0]}" alt="${(p.title || '').replace(/"/g, '&quot;')}" onerror="this.parentElement.innerHTML='<div class=filter-result-placeholder>🏠</div>'">`
+        : '<div class="filter-result-placeholder">🏠</div>';
+      const price = (p.price_jod || 0).toLocaleString() + ' JOD';
+      const estMo = p.estimated_monthly != null ? Math.round(p.estimated_monthly).toLocaleString() + ' JOD/mo' : '';
+      const afford = affordabilityBadge(p.estimated_monthly || 0);
+      const meta = [p.location, p.city].filter(Boolean).join(', ') + (p.bedrooms ? ` • ${p.bedrooms} bed` : '') + (p.size_sqm ? ` • ${p.size_sqm} m²` : '');
+      return `<div class="filter-result-card">
+        <div>${img}</div>
+        <div style="flex:1;min-width:0;">
+          <h3>${(p.title || 'Property').replace(/</g, '&lt;')}</h3>
+          <div class="price">${price}</div>
+          ${estMo ? '<div class="meta">Est. ' + estMo + '</div>' : ''}
+          ${afford}
+          <div class="meta">${meta.replace(/</g, '&lt;')}</div>
+          <a href="/property/${p.id}">View details →</a>
+          <a href="/finance/property/${p.id}" style="margin-left:1rem;">💰 Plan Financing</a>
+        </div>
+      </div>`;
+    }
+
+    async function fetchResults() {
+      const grid = document.getElementById('resultsGrid');
+      const countEl = document.getElementById('resultsCount');
+      grid.innerHTML = '<p class="loading">Searching...</p>';
+      try {
+        const qs = buildQuery();
+        const resp = await fetch(API_SEARCH + (qs ? '?' + qs : ''));
+        const data = await resp.json();
+        const list = data.properties || [];
+        countEl.textContent = `Found ${list.length} propert${list.length === 1 ? 'y' : 'ies'} in database`;
+        if (list.length === 0) {
+          grid.innerHTML = '<p class="empty-state">No properties match your filters. Try relaxing your criteria.</p>';
+        } else {
+          grid.innerHTML = list.map(renderProperty).join('');
+        }
+      } catch (e) {
+        countEl.textContent = 'Error loading results';
+        grid.innerHTML = '<p class="empty-state">Could not fetch from database. Please try again.</p>';
+      }
+    }
+
+    document.getElementById('filterForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      fetchResults();
+    });
+
+    fetchResults();
+  </script>
+</body>
+</html>

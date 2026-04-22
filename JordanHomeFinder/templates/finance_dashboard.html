@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Masar | مسار لدارك — Financial Planner</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    .finance-container { padding: 2rem 0; }
+    .finance-card { background: var(--card); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: var(--shadow); border: 1px solid var(--border); }
+    .finance-card h2 { font-size: 1.25rem; margin: 0 0 1rem; color: var(--text); }
+    .calc-grid { display: grid; gap: 1rem; max-width: 500px; }
+    .calc-row { display: flex; justify-content: space-between; align-items: center; }
+    .calc-row label { font-weight: 500; color: var(--text); }
+    .calc-row input { width: 120px; padding: 0.5rem; border-radius: 8px; border: 1px solid var(--border); }
+    .result { font-size: 1.5rem; font-weight: 700; color: var(--accent); margin-top: 1rem; }
+    .scenario-list { list-style: none; padding: 0; margin: 0; }
+    .scenario-item { padding: 1rem; background: var(--bg); border-radius: 8px; margin-bottom: 0.5rem; border: 1px solid var(--border); }
+    .scenario-item a { color: var(--accent); font-weight: 600; text-decoration: none; }
+    .scenario-item a:hover { text-decoration: underline; }
+    .btn-finance { display: inline-block; background: var(--accent); color: white; padding: 0.6rem 1.25rem; border-radius: 8px; text-decoration: none; font-weight: 600; margin-top: 0.5rem; margin-right: 0.5rem; }
+    .btn-finance:hover { background: var(--primary2); color: white; }
+    .profile-summary { display: flex; flex-wrap: wrap; gap: 1rem; margin: 0.5rem 0; }
+    .profile-stat { background: var(--bg); padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.9rem; }
+    .profile-stat strong { color: var(--accent); }
+  </style>
+</head>
+<body>
+  <div class="nav">
+    <div class="container nav-inner">
+      <a class="brand" href="{{ url_for('home_page') }}">
+        <div class="brand-badge">M</div>
+        <div><span class="brand-name">Masar</span><small>مسار لدارك</small></div>
+      </a>
+      <a href="{{ url_for('logout') }}" style="color: var(--muted); font-size: 0.9rem; text-decoration: none;">Log out</a>
+    </div>
+  </div>
+
+  <div class="container finance-container">
+    <h1 style="margin-bottom: 1.5rem;">Financial Planning Tools</h1>
+
+    <div class="finance-card">
+      <h2>Your Financial Profile</h2>
+      {% if profile and (profile.monthly_income or profile.monthly_expenses or profile.existing_savings) %}
+      <div class="profile-summary">
+        {% if profile.monthly_income %}<span class="profile-stat">Income: <strong>{{ "{:,.0f}".format(profile.monthly_income) }} JOD</strong>/mo</span>{% endif %}
+        {% if profile.monthly_expenses %}<span class="profile-stat">Expenses: <strong>{{ "{:,.0f}".format(profile.monthly_expenses) }} JOD</strong>/mo</span>{% endif %}
+        {% if profile.existing_savings %}<span class="profile-stat">Savings: <strong>{{ "{:,.0f}".format(profile.existing_savings) }} JOD</strong></span>{% endif %}
+      </div>
+      {% else %}
+      <p style="color: var(--muted); margin: 0 0 0.5rem;">Add your income and expenses for affordability estimates.</p>
+      {% endif %}
+      <a href="{{ url_for('finance_profile') }}" class="btn-finance">Edit profile</a>
+      <a href="{{ url_for('finance_rates_update') }}" class="btn-finance" style="background: var(--primary2);">Update rates</a>
+    </div>
+
+    <div class="finance-card">
+      <h2>💰 Loan Calculator</h2>
+      <p style="color: var(--muted); margin: 0 0 1rem;">Estimate your monthly payment for any property.</p>
+      <div class="calc-grid">
+        <div class="calc-row">
+          <label for="price">Property price (JOD)</label>
+          <input type="number" id="price" value="200000" min="10000" step="1000">
+        </div>
+        <div class="calc-row">
+          <label for="down">Down payment %</label>
+          <input type="number" id="down" value="20" min="0" max="100" step="5">
+        </div>
+        <div class="calc-row">
+          <label for="rate">Interest rate %</label>
+          <input type="number" id="rate" value="7.5" min="0" max="30" step="0.25">
+        </div>
+        <div class="calc-row">
+          <label for="years">Loan term (years)</label>
+          <input type="number" id="years" value="25" min="5" max="40" step="1">
+        </div>
+      </div>
+      <div class="result" id="calcResult">Est. ~1,240 JOD/month</div>
+    </div>
+
+    <div class="finance-card">
+      <h2>Start a plan</h2>
+      <p style="color: var(--muted); margin: 0 0 0.5rem;">Choose a property or enter a price manually.</p>
+      <a href="{{ url_for('listings_page') }}" class="btn-finance">Choose from Listings</a>
+      <a href="{{ url_for('finance_scenario_new') }}" class="btn-finance" style="background: var(--primary2);">Manual scenario</a>
+    </div>
+
+    <div class="finance-card">
+      <h2>📊 Saved scenarios</h2>
+      {% if scenarios %}
+      <ul class="scenario-list">
+        {% for s in scenarios %}
+        <li class="scenario-item">
+          <strong>{{ s.name }}</strong> — {{ "{:,.0f}".format(s.monthly) }} JOD/month
+          {% if s.property_id %}<a href="{{ url_for('property_detail_page', property_id=s.property_id) }}">View property</a> • {% endif %}
+          <a href="{{ url_for('finance_scenario_view', scenario_id=s.id) }}">View plan</a>
+        </li>
+        {% endfor %}
+      </ul>
+      <a href="{{ url_for('finance_compare') }}" class="btn-finance">Compare scenarios</a>
+      {% else %}
+      <p style="color: var(--muted);">No saved scenarios yet. Plan a property purchase or create a manual scenario.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <script>
+    function calc() {
+      const p = parseInt(document.getElementById('price').value) || 200000;
+      const d = parseInt(document.getElementById('down').value) || 20;
+      const r = parseFloat(document.getElementById('rate').value) || 7.5;
+      const y = parseInt(document.getElementById('years').value) || 25;
+      const loan = p * (1 - d/100);
+      if (loan <= 0) { document.getElementById('calcResult').textContent = 'Enter valid values'; return; }
+      const mr = r/100/12;
+      const n = y*12;
+      const monthly = loan * (mr * Math.pow(1+mr, n)) / (Math.pow(1+mr, n) - 1);
+      document.getElementById('calcResult').textContent = 'Est. ~' + Math.round(monthly).toLocaleString() + ' JOD/month';
+    }
+    ['price','down','rate','years'].forEach(id => document.getElementById(id)?.addEventListener?.('input', calc));
+    calc();
+  </script>
+</body>
+</html>

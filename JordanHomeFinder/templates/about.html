@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Masar | About</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  {% include 'partials/head_favicon.html' %}
+  <style>
+    .about-page { padding: 2rem 0 4rem; max-width: 720px; margin: 0 auto; }
+    .about-page h1 { font-size: 1.75rem; margin: 0 0 0.5rem; color: var(--text); }
+    .about-page .lead { color: var(--muted); font-size: 1.05rem; line-height: 1.6; margin-bottom: 1.5rem; }
+    .about-page p { color: var(--text); line-height: 1.65; margin: 0 0 1rem; }
+  </style>
+</head>
+<body>
+  {% include 'partials/nav_global.html' %}
+  <div class="container about-page">
+    <h1>About Masar</h1>
+    <p class="lead">مسار لدارك — The path to your home.</p>
+    <p>
+      Masar is your intelligent platform for property discovery and financial planning in Jordan.
+      We help you discover properties, plan financing, compare scenarios, and make confident decisions.
+    </p>
+    <p>
+      Whether you're a first-time buyer or an investor, our tools are designed to be simple, clear, and trustworthy.
+    </p>
+    <a href="{{ url_for('home_page') }}" class="btn btn-primary" style="text-decoration:none;">Back to Home</a>
+  </div>
+  {% include 'partials/footer_global.html' %}
+</body>
+</html>

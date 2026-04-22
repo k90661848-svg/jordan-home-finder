@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Masar | Step 1 — Financial snapshot</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    .finance-page { max-width: 560px; margin: 0 auto; }
+    .step-badge { display: inline-flex; align-items: center; padding: 0.35rem 0.75rem; border-radius: 999px; background: rgba(37,99,235,.1); color: var(--accent); font-weight: 600; font-size: var(--text-tiny); margin-bottom: 0.75rem; }
+    .form-group { margin-bottom: 1.25rem; }
+    .form-group label { display: block; font-weight: 500; margin-bottom: 0.35rem; color: var(--text); font-size: 1rem; }
+    .form-group .input { width: 100%; box-sizing: border-box; }
+    .help-icon { display: inline-flex; align-items: center; justify-content: center; width: 1.1rem; height: 1.1rem; border-radius: 50%; background: var(--border); color: var(--muted); font-size: 0.75rem; cursor: help; margin-left: 0.25rem; }
+    .advanced-toggle { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 0.95rem; padding: 0.5rem 0; display: flex; align-items: center; gap: 0.35rem; }
+    .advanced-toggle:hover { color: var(--accent); }
+    .advanced-content { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+  </style>
+</head>
+<body>
+  {% include 'partials/nav_global.html' %}
+
+  <div class="container finance-page">
+    <span class="step-badge">Step 1</span>
+    <h1>Your financial snapshot</h1>
+    <p class="subtitle">We use this to show affordability and savings timelines. Your data stays private.</p>
+
+    <form method="post" action="{{ url_for('finance.profile') }}" class="finance-card">
+      <div class="form-group">
+        <label for="monthly_income">
+          Monthly income (JOD)
+          <span class="help-icon" title="Your main salary or regular income per month" aria-label="Help: main income per month">?</span>
+        </label>
+        <input type="number" id="monthly_income" name="monthly_income" class="input" min="0" step="100" value="{{ profile.monthly_income or '' }}" aria-label="Monthly income in JOD">
+      </div>
+      <div class="form-group">
+        <label for="other_income">
+          Other income (JOD)
+          <span class="help-icon" title="Rent, investments, side income" aria-label="Help: other income">?</span>
+        </label>
+        <input type="number" id="other_income" name="other_income" class="input" min="0" step="100" value="{{ profile.other_income or '' }}" aria-label="Other income in JOD">
+      </div>
+      <div class="form-group">
+        <label for="monthly_expenses">
+          Monthly expenses (JOD)
+          <span class="help-icon" title="Rent, bills, food, transport — not including future mortgage" aria-label="Help: monthly expenses">?</span>
+        </label>
+        <input type="number" id="monthly_expenses" name="monthly_expenses" class="input" min="0" step="50" value="{{ profile.monthly_expenses or '' }}" aria-label="Monthly expenses in JOD">
+      </div>
+      <div class="form-group">
+        <label for="savings">
+          Current savings (JOD)
+          <span class="help-icon" title="Money you have saved for a down payment" aria-label="Help: current savings">?</span>
+        </label>
+        <input type="number" id="savings" name="savings" class="input" min="0" step="500" value="{{ profile.savings or '' }}" aria-label="Current savings in JOD">
+      </div>
+      <div class="form-group">
+        <label for="existing_debt">
+          Existing monthly debt (JOD)
+          <span class="help-icon" title="Car loan, credit cards, other loans — monthly total" aria-label="Help: existing debt">?</span>
+        </label>
+        <input type="number" id="existing_debt" name="existing_debt" class="input" min="0" step="50" value="{{ profile.existing_debt or '' }}" aria-label="Existing monthly debt in JOD">
+      </div>
+
+      <details style="margin-top: 1rem;">
+        <summary class="advanced-toggle">Advanced options ▼</summary>
+        <div class="advanced-content">
+          <div class="form-group">
+            <label for="risk_tolerance">Risk tolerance</label>
+            <select id="risk_tolerance" name="risk_tolerance" class="input" aria-label="Risk tolerance for scenarios">
+              <option value="conservative" {{ 'selected' if profile.risk_tolerance == 'conservative' else '' }}>Conservative</option>
+              <option value="balanced" {{ 'selected' if profile.risk_tolerance == 'balanced' or not profile.risk_tolerance else '' }}>Balanced</option>
+              <option value="aggressive" {{ 'selected' if profile.risk_tolerance == 'aggressive' else '' }}>Aggressive</option>
+            </select>
+          </div>
+        </div>
+      </details>
+
+      <button type="submit" class="btn btn-primary" style="margin-top: 1rem;">Save profile</button>
+    </form>
+
+    <p style="text-align: center; margin-top: 1rem;">
+      <a href="{{ url_for('finance.dashboard') }}" class="btn btn-ghost">← Back to planner</a>
+    </p>
+  </div>
+</body>
+</html>

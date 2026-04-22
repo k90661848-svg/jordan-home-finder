@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Masar | Financial planner</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    .step-badge { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.35rem 0.75rem; border-radius: 999px; background: rgba(37,99,235,.1); color: var(--accent); font-weight: 600; font-size: var(--text-tiny); margin-bottom: 0.75rem; }
+    .finance-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; }
+    .finance-stat { padding: 0.75rem 1rem; background: var(--bg); border-radius: var(--radius); border: 1px solid var(--border); }
+    .finance-stat .label { font-size: 0.9rem; color: var(--muted); margin-bottom: 0.25rem; }
+    .finance-stat .value { font-size: 1.25rem; font-weight: 700; color: var(--accent); }
+    .quick-calc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 1rem; align-items: end; max-width: 520px; }
+    .quick-calc-grid label { display: block; font-size: 0.9rem; font-weight: 500; margin-bottom: 0.35rem; color: var(--muted); }
+    .quick-calc-grid .input { padding: 0.6rem; }
+    .quick-calc-result { font-size: 1.2rem; font-weight: 700; color: var(--accent); margin-top: 1rem; }
+    .saved-list { list-style: none; padding: 0; margin: 0; }
+    .saved-list li { padding: 0.85rem 0; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
+    .saved-list li:last-child { border-bottom: none; }
+    .saved-list a { color: var(--accent); font-weight: 600; text-decoration: none; }
+    .saved-list a:hover { text-decoration: underline; }
+    .advanced-toggle { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 0.95rem; padding: 0.5rem 0; display: flex; align-items: center; gap: 0.35rem; }
+    .advanced-toggle:hover { color: var(--accent); }
+    .advanced-content { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+    .help-icon { display: inline-flex; align-items: center; justify-content: center; width: 1.1rem; height: 1.1rem; border-radius: 50%; background: var(--border); color: var(--muted); font-size: 0.75rem; cursor: help; margin-left: 0.25rem; }
+  </style>
+</head>
+<body>
+  {% include 'partials/nav_global.html' %}
+
+  <div class="container finance-page">
+    <h1>Financial planner</h1>
+    <p class="subtitle">Plan your purchase in three simple steps.</p>
+
+    <div class="finance-grid">
+      <div class="finance-card">
+        <span class="step-badge">Step 1</span>
+        <h2>Your financial snapshot</h2>
+        <p style="color: var(--muted); font-size: 0.95rem; margin: 0 0 1rem;">Income, expenses, and savings help us show affordability and savings timelines.</p>
+        {% if profile and (profile.monthly_income or profile.monthly_expenses) %}
+        <div class="finance-stat" style="margin-bottom: 0.5rem;">
+          <span class="label">Total income</span>
+          <div class="value">{{ "{:,.0f}".format(profile.total_income) }} JOD/mo</div>
+        </div>
+        <div class="finance-stat" style="margin-bottom: 0.5rem;">
+          <span class="label">Monthly expenses</span>
+          <div class="value">{{ "{:,.0f}".format(profile.monthly_expenses or 0) }} JOD</div>
+        </div>
+        <div class="finance-stat">
+          <span class="label">Savings capacity</span>
+          <div class="value">{{ "{:,.0f}".format(profile.savings_capacity()) }} JOD/mo</div>
+        </div>
+        {% else %}
+        <p style="color: var(--muted); margin: 0 0 1rem;">Add your numbers to see personalised results.</p>
+        {% endif %}
+        <a href="{{ url_for('finance.profile') }}" class="btn btn-primary" style="margin-top: 0.75rem; text-decoration: none;">{{ 'Edit profile' if profile and profile.monthly_income else 'Complete Step 1' }}</a>
+      </div>
+
+      <div class="finance-card">
+        <span class="step-badge">Step 2 & 3</span>
+        <h2>Plan a purchase</h2>
+        <p style="color: var(--muted); font-size: 0.95rem; margin: 0 0 1rem;">Pick a property to see monthly payment, affordability, and savings timeline.</p>
+        {% if affordability %}
+        <div class="finance-stat" style="margin-bottom: 0.5rem;">
+          <span class="label">Suggested max monthly payment</span>
+          <div class="value">{{ "{:,.0f}".format(affordability.max_monthly) }} JOD</div>
+        </div>
+        {% endif %}
+        <a href="{{ url_for('listings_page') }}" class="btn btn-primary" style="margin-top: 0.75rem; text-decoration: none;">Choose a property</a>
+      </div>
+    </div>
+
+    <div class="finance-card">
+      <h2>Quick loan calculator</h2>
+      <p style="color: var(--muted); font-size: 0.95rem; margin: 0 0 1rem;">Estimate monthly payment for any loan amount.</p>
+      <div class="quick-calc-grid">
+        <div>
+          <label for="q-amount">Loan amount (JOD)</label>
+          <input type="number" id="q-amount" class="input" value="100000" min="1000" step="5000" aria-label="Loan amount in JOD">
+        </div>
+        <div>
+          <label for="q-years">Years</label>
+          <input type="number" id="q-years" class="input" value="25" min="1" max="40" aria-label="Loan term in years">
+        </div>
+        <div>
+          <label for="q-rate">Interest rate %</label>
+          <input type="number" id="q-rate" class="input" value="7.5" min="0" max="30" step="0.25" aria-label="Annual interest rate">
+        </div>
+      </div>
+      <div class="quick-calc-result" id="q-monthly" aria-live="polite">Est. monthly: JD 0</div>
+    </div>
+
+    <div class="finance-card">
+      <h2>Your saved plans</h2>
+      {% if saved_plans %}
+      <ul class="saved-list">
+        {% for p in saved_plans[:5] %}
+        <li>
+          <span><strong>{{ p.name }}</strong></span>
+          <a href="{{ url_for('finance.saved_plans') }}">View all</a>
+        </li>
+        {% endfor %}
+      </ul>
+      <a href="{{ url_for('finance.saved_plans') }}" class="btn btn-primary" style="text-decoration: none;">View full list</a>
+      {% else %}
+      <p style="color: var(--muted); margin: 0 0 1rem;">When you plan a purchase and click “Save plan”, it will appear here.</p>
+      <a href="{{ url_for('listings_page') }}" class="btn btn-primary" style="text-decoration: none;">Browse properties</a>
+      {% endif %}
+    </div>
+
+    <details class="finance-card" style="margin-top: 1rem;">
+      <summary class="advanced-toggle">Advanced options ▼</summary>
+      <div class="advanced-content">
+        <a href="{{ url_for('finance.compare') }}" style="color: var(--accent); font-weight: 500;">Compare financial strategies</a>
+        <a href="{{ url_for('finance.affordability') }}" style="color: var(--accent); font-weight: 500; margin-left: 1rem;">Affordability guide (DTI)</a>
+      </div>
+    </details>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/finance_engine.js') }}"></script>
+  <script>
+    (function () {
+      var a = document.getElementById("q-amount");
+      var y = document.getElementById("q-years");
+      var r = document.getElementById("q-rate");
+      var out = document.getElementById("q-monthly");
+      function fmt(n) { return (n || 0).toLocaleString("en-JO", { maximumFractionDigits: 0 }); }
+      function calc() {
+        var P = parseFloat(a.value) || 0;
+        var yr = parseInt(y.value, 10) || 25;
+        var rate = parseFloat(r.value) || 7.5;
+        if (P <= 0) { out.textContent = "Est. monthly: JD 0"; return; }
+        var monthly = window.FinanceEngine && window.FinanceEngine.calcLoan(P, rate, yr).monthly;
+        out.textContent = "Est. monthly: JD " + fmt(monthly);
+      }
+      [a, y, r].forEach(function (el) { if (el) el.addEventListener("input", calc); });
+      calc();
+    })();
+  </script>
+</body>
+</html>

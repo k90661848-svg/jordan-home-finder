@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Masar | مسار لدارك — Plan: {{ property.title }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    .plan-container { padding: 2rem 0; max-width: 600px; }
+    .plan-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+      margin-bottom: 1rem;
+    }
+    .plan-card h2 { font-size: 1.25rem; margin: 0 0 1rem; color: var(--text); }
+    .plan-row { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--border); }
+    .plan-row:last-child { border-bottom: none; }
+    .plan-total { font-size: 1.5rem; font-weight: 700; color: var(--accent); margin-top: 1rem; padding-top: 1rem; border-top: 2px solid var(--accent); }
+    .back-link { display: inline-block; margin-bottom: 1rem; color: var(--accent); text-decoration: none; }
+    .back-link:hover { text-decoration: underline; }
+    .btn-plan { display: inline-block; background: var(--accent); color: white; padding: 0.6rem 1.25rem; border-radius: 8px; text-decoration: none; font-weight: 600; margin-top: 1rem; }
+    .btn-plan:hover { background: var(--primary2); color: white; }
+  </style>
+</head>
+<body>
+  <div class="nav">
+    <div class="container nav-inner">
+      <a class="brand" href="{{ url_for('home_page') }}">
+        <div class="brand-badge">M</div>
+        <div>
+          <span class="brand-name">Masar</span>
+          <small>مسار لدارك</small>
+        </div>
+      </a>
+      <span class="pill">Financial Plan</span>
+    </div>
+  </div>
+
+  <div class="container plan-container">
+    <a href="{{ url_for('property_detail_page', property_id=property.id) }}" class="back-link">← Back to property</a>
+    <h1 style="margin-bottom: 0.5rem;">{{ property.title }}</h1>
+    <p style="color: var(--muted); margin-bottom: 1.5rem;">{{ "{:,}".format(property.price_jod) }} JOD • {{ property.location }}, {{ property.city }}</p>
+
+    <div class="plan-card">
+      <h2>Purchase breakdown</h2>
+      <div class="plan-row"><span>Down payment ({{ down_pct }}%)</span><strong>{{ "{:,.0f}".format(plan.down_payment) }} JOD</strong></div>
+      <div class="plan-row"><span>Loan amount</span><strong>{{ "{:,.0f}".format(plan.loan_amount) }} JOD</strong></div>
+      <div class="plan-row"><span>Interest rate</span><strong>{{ rate_pct }}%</strong></div>
+      <div class="plan-row"><span>Loan term</span><strong>{{ years }} years</strong></div>
+      <div class="plan-total">Monthly payment: {{ "{:,.0f}".format(plan.monthly) }} JOD</div>
+      <div class="plan-row" style="margin-top: 0.5rem;"><span>Total interest paid</span><span>{{ "{:,.0f}".format(plan.total_interest) }} JOD</span></div>
+    </div>
+
+    <a href="{{ url_for('finance_property', property_id=property.id) }}" class="btn-plan" style="background: var(--primary2);">Edit plan</a>
+    <a href="{{ url_for('finance_dashboard') }}" class="btn-plan">Back to Financial Planner</a>
+    <a href="{{ url_for('finance_compare') }}" class="btn-plan" style="margin-left: 0.5rem; background: var(--primary2);">Compare scenarios</a>
+  </div>
+</body>
+</html>

@@ -1,0 +1,16 @@
+<footer class="footer-global">
+  <div class="footer-global-inner container">
+    <a href="{{ url_for('home_page') }}" class="footer-global-logo" aria-label="Masar home">
+      <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Masar" class="footer-global-logo-img" width="120" height="34">
+    </a>
+    <p class="footer-global-tagline">Masar | The Path to Your Home</p>
+    <nav class="footer-global-links" aria-label="Footer navigation">
+      <a href="{{ url_for('home_page') }}">Home</a>
+      <a href="{{ url_for('listings_page') }}">Explore Properties</a>
+      <a href="{{ url_for('finance.dashboard') }}">Financial Planner</a>
+      <a href="{{ url_for('about_page') }}">About</a>
+      <a href="{{ url_for('contact_page') }}">Contact</a>
+    </nav>
+    <p class="footer-global-copy">&copy; 2026 Masar. All rights reserved.</p>
+  </div>
+</footer>

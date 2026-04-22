@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Masar | {% if login_mode %}Log In{% else %}Sign Up{% endif %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  {% include 'partials/head_favicon.html' %}
+</head>
+<body>
+  <div class="container">
+    <div class="section">
+      <div class="card card-elevated">
+
+        {% if login_mode %}
+        <h1 style="margin:0 0 8px 0;">Log in</h1>
+        <p style="margin:0 0 18px 0; color: var(--muted);">Enter your credentials to access the Financial Tool and saved plans.</p>
+        <form method="POST" action="{{ url_for('login') }}">
+          <div style="display:grid; gap:14px;">
+            <div>
+              <label class="label" for="email">Email</label>
+              <input id="email" class="input" type="email" name="email" placeholder="Email" required>
+            </div>
+            <div>
+              <label class="label" for="password">Password</label>
+              <input id="password" class="input" type="password" name="password" placeholder="Password" required>
+            </div>
+          </div>
+          {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+          <div style="margin:1rem 0; padding:0.5rem; background:rgba(239,68,68,.1); border-radius:8px; color:#B91C1C; font-size:0.9rem;">
+            {% for cat, msg in messages %}{{ msg }}{% endfor %}
+          </div>
+          {% endif %}
+          {% endwith %}
+          <div style="height:18px;"></div>
+          <button class="btn btn-primary" type="submit">Log in</button>
+          <div style="height:10px;"></div>
+          <a href="{{ url_for('signup') }}" style="display:block; text-align:center; color: var(--accent); text-decoration:none;">Create account</a>
+        </form>
+        {% else %}
+        <h1 style="margin:0 0 8px 0;">Create your account</h1>
+        <p style="margin:0 0 18px 0; color: var(--muted);">
+          Fill in your details, choose your status, then pick how you want to use the app.
+        </p>
+
+        <!-- ✅ FIX: Add a real form so POST works -->
+        <form method="POST" action="/signup">
+
+          <div style="display:grid; gap:14px;">
+            <div>
+              <label class="label" for="name">Full Name</label>
+              <input id="name" class="input" type="text" name="name" placeholder="Full Name" required>
+            </div>
+
+            <div>
+              <label class="label" for="email">Email Address</label>
+              <input id="email" class="input" type="email" name="email" placeholder="Email Address" required>
+            </div>
+
+            <div>
+              <label class="label" for="password">Password</label>
+              <input id="password" class="input" type="password" name="password" placeholder="Password" required>
+            </div>
+
+            <div>
+              <label class="label" for="status">Your status</label>
+              <select id="status" class="input" name="status" required>
+                <option value="" disabled selected>Select your status</option>
+                <option value="young_adult">Young Adult</option>
+                <option value="adult">Adult</option>
+                <option value="investor">Investor</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="height:18px;"></div>
+
+          <div class="pill" style="margin-bottom: 10px;">Step 2: Choose your purpose</div>
+          <p style="margin: 0 0 14px 0; color: var(--muted);">
+            Click one or more options below so the app understands what you want.
+          </p>
+
+          <div class="features">
+            <div class="feature-card" data-value="ai_chatbot" onclick="toggleFeature(this)">
+              <h3 class="feature-title">AI Chatbot Support</h3>
+              <p class="feature-desc">Ask in normal language and narrow options fast.</p>
+            </div>
+
+            <div class="feature-card" data-value="smart_filters" onclick="toggleFeature(this)">
+              <h3 class="feature-title">Smart Filters</h3>
+              <p class="feature-desc">Filter by budget, area, bedrooms, and purpose.</p>
+            </div>
+
+            <div class="feature-card" data-value="fast_modern" onclick="toggleFeature(this)">
+              <h3 class="feature-title">Fast & Modern Experience</h3>
+              <p class="feature-desc">Clean layout, simple steps, and clear info.</p>
+            </div>
+
+            <div class="feature-card" data-value="financial_tool" onclick="toggleFeature(this)">
+              <h3 class="feature-title">Financial Tool</h3>
+              <p class="feature-desc">Get budgeting help after narrowing properties.</p>
+            </div>
+          </div>
+
+          <!-- ✅ This is what gets sent to Flask -->
+          <input type="hidden" name="features" id="featuresInput" value="">
+
+          {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+          <div style="margin:1rem 0; padding:0.5rem; background:rgba(239,68,68,.1); border-radius:8px; color:#B91C1C; font-size:0.9rem;">
+            {% for cat, msg in messages %}{{ msg }}{% endfor %}
+          </div>
+          {% endif %}
+          {% endwith %}
+          <div style="height:18px;"></div>
+          <button class="btn btn-primary" type="submit">Continue</button>
+          <div style="height:10px;"></div>
+          <a href="/" style="display:block; text-align:center; color: var(--muted); text-decoration:none;">Back</a>
+          <a href="{{ url_for('login') }}" style="display:block; text-align:center; color: var(--accent); text-decoration:none; margin-top:8px;">Already have an account? Log in</a>
+        </form>
+        {% endif %}
+
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function toggleFeature(card) {
+      card.classList.toggle("active");
+      const selected = Array.from(document.querySelectorAll(".feature-card.active"))
+        .map(el => el.getAttribute("data-value"));
+      document.getElementById("featuresInput").value = selected.join(",");
+    }
+  </script>
+
+</body>
+</html>

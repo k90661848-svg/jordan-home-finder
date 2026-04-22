@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Masar | مسار لدارك — Compare Scenarios</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    .compare-container { padding: 2rem 0; }
+    .compare-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--card);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+    }
+    .compare-table th, .compare-table td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--border); }
+    .compare-table th { background: var(--bg); font-weight: 600; color: var(--text); }
+    .compare-table tr:last-child td { border-bottom: none; }
+    .compare-table a { color: var(--accent); font-weight: 600; text-decoration: none; }
+    .compare-table a:hover { text-decoration: underline; }
+    .empty-state { padding: 2rem; text-align: center; color: var(--muted); background: var(--card); border-radius: var(--radius); }
+    .back-link { display: inline-block; margin-bottom: 1rem; color: var(--accent); text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="nav">
+    <div class="container nav-inner">
+      <a class="brand" href="{{ url_for('home_page') }}">
+        <div class="brand-badge">M</div>
+        <div>
+          <span class="brand-name">Masar</span>
+          <small>مسار لدارك</small>
+        </div>
+      </a>
+      <span class="pill">Compare Scenarios</span>
+    </div>
+  </div>
+
+  <div class="container compare-container">
+    <a href="{{ url_for('finance_dashboard') }}" class="back-link">← Back to Financial Planner</a>
+    <h1 style="margin-bottom: 1.5rem;">Compare saved scenarios</h1>
+
+    {% if scenarios %}
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>Scenario</th>
+          <th>Property</th>
+          <th>Price</th>
+          <th>Down %</th>
+          <th>Rate</th>
+          <th>Monthly</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in scenarios %}
+        <tr>
+          <td><strong>{{ s.name }}</strong></td>
+          <td>{{ s.property_title[:40] }}{% if s.property_title|length > 40 %}…{% endif %}</td>
+          <td>{{ "{:,.0f}".format(s.price) }} JOD</td>
+          <td>{{ s.down_pct }}%</td>
+          <td>{{ s.rate_pct }}%</td>
+          <td><strong>{{ "{:,.0f}".format(s.monthly) }} JOD</strong></td>
+          <td>
+            {% if s.property_id %}<a href="{{ url_for('property_detail_page', property_id=s.property_id) }}">View property</a> • {% endif %}
+            <a href="{{ url_for('finance_scenario_view', scenario_id=s.id) }}">View plan</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+      <p>No saved scenarios yet.</p>
+      <p>Plan a property purchase from <a href="{{ url_for('listings_page') }}">Listings</a> to save scenarios here.</p>
+    </div>
+    {% endif %}
+  </div>
+</body>
+</html>

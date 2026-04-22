@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Masar | مسار لدارك — The Path to Your Home</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  {% include 'partials/head_favicon.html' %}
+  <style>
+    .home-hero {
+      padding: 2rem 0 1.5rem;
+      text-align: center;
+    }
+    .home-hero .brand-display {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 1rem;
+      letter-spacing: 0.02em;
+    }
+    .home-hero .brand-display span { color: var(--primary); }
+    .home-hero h1 {
+      font-size: clamp(2rem, 4.5vw, 3rem);
+      margin: 0 0 0.5rem 0;
+      letter-spacing: -0.03em;
+      line-height: 1.2;
+    }
+    .home-hero .subtext {
+      max-width: 480px;
+      margin: 0 auto 1.5rem;
+      color: var(--muted);
+      line-height: 1.6;
+      font-size: 1.05rem;
+    }
+    .home-hero .btn-row { margin-top: 1.25rem; gap: 1rem; }
+    .home-hero .btn-primary { padding: 14px 28px; font-size: 1rem; min-height: 48px; }
+    .home-hero .btn-secondary {
+      padding: 14px 24px;
+      font-size: 1rem;
+      min-height: 48px;
+      background: transparent;
+      border: 2px solid var(--border);
+      color: var(--text);
+      font-weight: 600;
+    }
+    .home-hero .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+    .section-title {
+      font-size: var(--text-h2);
+      font-weight: 600;
+      margin: var(--space-lg) 0 var(--space-md);
+      color: var(--text);
+    }
+    .slideshow-wrap {
+      position: relative;
+      margin: var(--space-md) 0;
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: var(--shadow-card);
+      background: var(--card);
+    }
+    .slideshow-viewport {
+      overflow: hidden;
+      width: 100%;
+      border-radius: var(--radius-lg);
+    }
+    .slideshow-track {
+      display: flex;
+      transition: transform 0.4s ease;
+      will-change: transform;
+    }
+    .slideshow-slide {
+      flex: 0 0 100%;
+      width: 100%;
+      min-height: 130px;
+      display: flex;
+      flex-direction: column;
+    }
+    @media (min-width: 768px) {
+      .slideshow-slide { flex-direction: row; min-height: 120px; }
+    }
+    .slideshow-image {
+      flex-shrink: 0;
+      width: 100%;
+      height: 100px;
+    }
+    @media (min-width: 768px) {
+      .slideshow-image { width: 35%; height: 100%; min-height: 120px; }
+    }
+    .slideshow-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .slideshow-placeholder {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, var(--primary2), var(--accent));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 2rem;
+    }
+    .slideshow-content {
+      padding: 0.75rem 1rem;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .slideshow-title { font-size: 1rem; font-weight: 600; margin-bottom: 0.25rem; color: var(--text); }
+    .slideshow-price { font-size: 1.1rem; font-weight: 700; color: var(--accent); margin-bottom: 0.2rem; }
+    .slideshow-location { color: var(--muted); font-size: 0.8rem; margin-bottom: 0.35rem; }
+    .slideshow-desc { font-size: 0.8rem; color: var(--muted); line-height: 1.4; margin-bottom: 0.5rem; flex: 1; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+    .slideshow-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    .slideshow-actions .btn { padding: 6px 12px; font-size: 0.85rem; }
+    .slideshow-nav {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: none;
+      background: white;
+      box-shadow: var(--shadow-hover);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      color: var(--text);
+      z-index: 5;
+      transition: background 0.2s, transform 0.2s;
+    }
+    .slideshow-nav:hover { background: var(--bg); transform: translateY(-50%) scale(1.05); }
+    .slideshow-nav:focus { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .slideshow-prev { left: 12px; }
+    .slideshow-next { right: 12px; }
+    .slideshow-dots {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      padding: 0.5rem;
+    }
+    .slideshow-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      border: none;
+      background: var(--border);
+      cursor: pointer;
+      transition: background 0.2s, transform 0.2s;
+    }
+    .slideshow-dot:hover { background: var(--muted); }
+    .slideshow-dot.active { background: var(--accent); transform: scale(1.2); }
+    .slideshow-dot:focus { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .explore-all {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+      padding: 0.5rem 0.9rem;
+      color: var(--accent);
+      font-weight: 600;
+      text-decoration: none;
+      font-size: 0.95rem;
+      transition: color 0.2s;
+    }
+    .explore-all:hover { color: var(--primary); text-decoration: underline; }
+    .feature-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1rem;
+    }
+    .feature-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      box-shadow: var(--shadow);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .feature-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-hover);
+    }
+    .feature-card .icon { font-size: 2rem; margin-bottom: 1rem; }
+    .feature-card h3 { font-size: 1.1rem; margin: 0 0 0.5rem; color: var(--text); }
+    .feature-card p { font-size: 0.95rem; color: var(--muted); line-height: 1.5; margin: 0 0 1rem; }
+    .feature-card a {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--accent);
+      text-decoration: none;
+    }
+    .feature-card a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+  {% include 'partials/nav_global.html' %}
+
+  <main class="container">
+    <section class="home-hero" aria-labelledby="hero-headline">
+      <p class="brand-display">Masar <span>|</span> مسار لدارك — The Path to Your Home</p>
+      <h1 id="hero-headline">Find the Smart Path to Your Home.</h1>
+      <p class="subtext">AI-powered property discovery and financial planning.</p>
+      <div class="btn-row">
+        <form action="{{ url_for('chatbot_page') }}" method="get" style="margin:0;">
+          <button class="btn btn-primary" type="submit">Start Exploring</button>
+        </form>
+        <a href="{{ url_for('listings_page') }}" class="btn btn-secondary" style="text-decoration:none;">Browse Listings</a>
+      </div>
+    </section>
+
+    {% if slide_properties %}
+    <section id="property-slideshow" class="slideshow-wrap" role="region" aria-label="Featured properties carousel" tabindex="0">
+      <div class="slideshow-viewport">
+        <div class="slideshow-track">
+          {% for prop in slide_properties %}
+          <article class="slideshow-slide" aria-hidden="{{ 'false' if loop.first else 'true' }}">
+            <div class="slideshow-image">
+              {% if prop.images and prop.images|length > 0 %}
+                <img src="{{ url_for('static', filename='images/' + prop.images[0]) }}" alt="{{ prop.title }}">
+              {% else %}
+                <div class="slideshow-placeholder">🏠</div>
+              {% endif %}
+            </div>
+            <div class="slideshow-content">
+              <div>
+                <h2 class="slideshow-title">{{ prop.title }}</h2>
+                <div class="slideshow-price">{{ "{:,}".format(prop.price_jod) }} JOD</div>
+                <div class="slideshow-location">📍 {{ prop.location }}, {{ prop.city }}</div>
+                <p class="slideshow-desc">{{ (prop.description or '')[:120] }}{% if (prop.description or '')|length > 120 %}…{% endif %}</p>
+              </div>
+              <div class="slideshow-actions">
+                <a href="{{ url_for('property_detail_page', property_id=prop.id) }}" class="btn btn-primary" style="text-decoration:none;">View Details</a>
+                <a href="{{ url_for('listings_page') }}" class="btn btn-ghost">Explore Listings</a>
+              </div>
+            </div>
+          </article>
+          {% endfor %}
+        </div>
+      </div>
+      {% if slide_properties|length > 1 %}
+      <button type="button" class="slideshow-nav slideshow-prev" aria-label="Previous slide">←</button>
+      <button type="button" class="slideshow-nav slideshow-next" aria-label="Next slide">→</button>
+      <div class="slideshow-dots" role="tablist"></div>
+      {% endif %}
+    </section>
+    <a href="{{ url_for('listings_page') }}" class="explore-all">Explore All Properties →</a>
+    {% endif %}
+
+    <h2 class="section-title">Smart Tools — How Jordan Home Finder Helps You</h2>
+    <div class="feature-cards">
+      <div class="feature-card">
+        <div class="icon">🎯</div>
+        <h3>Smart Filters</h3>
+        <p>Refine by location, budget, bedrooms, size, and more. Find exactly what you need.</p>
+        <a href="{{ url_for('filters_page') }}" class="btn btn-primary" style="margin-top:0.5rem; text-decoration:none;">Open Smart Filters</a>
+      </div>
+      <div class="feature-card">
+        <div class="icon">💬</div>
+        <h3>AI Property Assistant</h3>
+        <p>Chat naturally to get personalized property recommendations based on your preferences.</p>
+        <a href="{{ url_for('chatbot_page') }}" class="btn btn-primary" style="margin-top:0.5rem; text-decoration:none;">Try AI Chatbot</a>
+      </div>
+      <div class="feature-card">
+        <div class="icon">💰</div>
+        <h3>Financial Planning Tools</h3>
+        <p>Loan calculator, purchase plans, and affordability analysis for every property.</p>
+        <a href="{{ url_for('finance.dashboard') }}" class="btn btn-primary" style="margin-top:0.5rem; text-decoration:none;">Open Financial Planner</a>
+      </div>
+    </div>
+  </main>
+
+  {% include 'partials/footer_global.html' %}
+  <script src="{{ url_for('static', filename='slideshow.js') }}"></script>
+</body>
+</html>

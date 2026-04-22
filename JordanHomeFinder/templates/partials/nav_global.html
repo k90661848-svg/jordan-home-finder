@@ -1,0 +1,75 @@
+{# Global navigation: left logo, center links (desktop), right auth. Mobile: hamburger + drawer. #}
+<nav class="nav-global" role="navigation" aria-label="Main navigation">
+  <div class="nav-global-inner container">
+    <a class="nav-global-brand" href="{{ url_for('home_page') }}" aria-label="Masar home">
+      <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Masar | مسار لدارك" class="nav-global-logo-img" width="160" height="45">
+    </a>
+
+    <button type="button" class="nav-global-menu-btn" aria-label="Open menu" aria-expanded="false" aria-controls="nav-drawer" id="nav-menu-btn">
+      <span class="nav-global-hamburger"></span>
+    </button>
+
+    <div class="nav-global-center" aria-label="Primary links">
+      <a class="nav-global-link {{ 'active' if request.endpoint == 'home_page' else '' }}" href="{{ url_for('home_page') }}">Home</a>
+      <a class="nav-global-link {{ 'active' if request.endpoint == 'listings_page' else '' }}" href="{{ url_for('listings_page') }}">Explore Properties</a>
+      <a class="nav-global-link {{ 'active' if request.endpoint == 'finance.dashboard' else '' }}" href="{{ url_for('finance.dashboard') }}">Financial Planner</a>
+      <a class="nav-global-link {{ 'active' if request.endpoint == 'finance.compare' else '' }}" href="{{ url_for('finance.compare') }}">Compare Scenarios</a>
+      <a class="nav-global-link {{ 'active' if request.endpoint == 'about_page' else '' }}" href="{{ url_for('about_page') }}">About</a>
+      <a class="nav-global-link {{ 'active' if request.endpoint == 'contact_page' else '' }}" href="{{ url_for('contact_page') }}">Contact</a>
+    </div>
+
+    <div class="nav-global-right" aria-label="Account and tools">
+      <a class="nav-global-link {{ 'active' if request.endpoint == 'chatbot_page' else '' }}" href="{{ url_for('chatbot_page') }}" aria-label="Chatbot">Chatbot</a>
+      {% if session.get('user_id') %}
+      <a class="nav-global-link" href="{{ url_for('finance.profile') }}" aria-label="Profile">Profile</a>
+      <a class="nav-global-link nav-global-logout" href="{{ url_for('logout') }}">Logout</a>
+      {% else %}
+      <a class="nav-global-link nav-global-login" href="{{ url_for('login') }}">Login</a>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="nav-global-drawer" id="nav-drawer" aria-label="Mobile menu" aria-hidden="true">
+    <div class="nav-global-drawer-inner">
+      <a class="nav-global-drawer-link {{ 'active' if request.endpoint == 'home_page' else '' }}" href="{{ url_for('home_page') }}">Home</a>
+      <a class="nav-global-drawer-link {{ 'active' if request.endpoint == 'listings_page' else '' }}" href="{{ url_for('listings_page') }}">Explore Properties</a>
+      <a class="nav-global-drawer-link {{ 'active' if request.endpoint == 'finance.dashboard' else '' }}" href="{{ url_for('finance.dashboard') }}">Financial Planner</a>
+      <a class="nav-global-drawer-link {{ 'active' if request.endpoint == 'finance.compare' else '' }}" href="{{ url_for('finance.compare') }}">Compare Scenarios</a>
+      <a class="nav-global-drawer-link {{ 'active' if request.endpoint == 'about_page' else '' }}" href="{{ url_for('about_page') }}">About</a>
+      <a class="nav-global-drawer-link {{ 'active' if request.endpoint == 'contact_page' else '' }}" href="{{ url_for('contact_page') }}">Contact</a>
+      <a class="nav-global-drawer-link {{ 'active' if request.endpoint == 'chatbot_page' else '' }}" href="{{ url_for('chatbot_page') }}">Chatbot</a>
+      {% if session.get('user_id') %}
+      <a class="nav-global-drawer-link" href="{{ url_for('finance.profile') }}">Profile</a>
+      <a class="nav-global-drawer-link" href="{{ url_for('logout') }}">Logout</a>
+      {% else %}
+      <a class="nav-global-drawer-link" href="{{ url_for('login') }}">Login</a>
+      {% endif %}
+    </div>
+  </div>
+  <div class="nav-global-overlay" id="nav-overlay" aria-hidden="true"></div>
+</nav>
+<script>
+(function() {
+  var btn = document.getElementById('nav-menu-btn');
+  var drawer = document.getElementById('nav-drawer');
+  var overlay = document.getElementById('nav-overlay');
+  if (!btn || !drawer) return;
+  function open() {
+    drawer.setAttribute('aria-hidden', 'false');
+    drawer.classList.add('open');
+    if (overlay) overlay.classList.add('open');
+    btn.setAttribute('aria-expanded', 'true');
+    btn.setAttribute('aria-label', 'Close menu');
+  }
+  function close() {
+    drawer.setAttribute('aria-hidden', 'true');
+    drawer.classList.remove('open');
+    if (overlay) overlay.classList.remove('open');
+    btn.setAttribute('aria-expanded', 'false');
+    btn.setAttribute('aria-label', 'Open menu');
+  }
+  btn.addEventListener('click', function() { drawer.classList.contains('open') ? close() : open(); });
+  if (overlay) overlay.addEventListener('click', close);
+  drawer.querySelectorAll('a').forEach(function(a) { a.addEventListener('click', close); });
+})();
+</script>

@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Masar | Plan — {{ property.title }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    .step-badge { display: inline-flex; align-items: center; padding: 0.35rem 0.75rem; border-radius: 999px; background: rgba(37,99,235,.1); color: var(--accent); font-weight: 600; font-size: var(--text-tiny); margin-bottom: 0.75rem; }
+    .plan-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; align-items: start; }
+    @media (max-width: 768px) { .plan-layout { grid-template-columns: 1fr; } }
+    .prop-summary { display: flex; gap: 1rem; margin-bottom: 0; }
+    .prop-summary img { width: 120px; height: 90px; object-fit: cover; border-radius: var(--radius); }
+    .prop-summary .placeholder { width: 120px; height: 90px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 2rem; }
+    .prop-summary .info { flex: 1; }
+    .prop-summary .price { font-size: 1.5rem; font-weight: 700; color: var(--accent); }
+    .slider-row { margin-bottom: 1rem; }
+    .slider-row label { display: block; font-weight: 500; margin-bottom: 0.35rem; color: var(--text); font-size: 0.95rem; }
+    .slider-row .controls { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+    .slider-row input[type="range"] { flex: 1; min-width: 80px; accent-color: var(--accent); }
+    .slider-row input[type="number"] { width: 100px; padding: 0.5rem; border: 1px solid var(--border); border-radius: var(--radius); font-size: 1rem; }
+    .result-row { padding: 0.6rem 0; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-size: 1rem; }
+    .result-row:last-child { border-bottom: none; }
+    .result-total { font-size: 1.25rem; font-weight: 700; color: var(--accent); margin-top: 0.75rem; padding-top: 0.75rem; border-top: 2px solid var(--accent); }
+    .dti-box { padding: 1rem; border-radius: var(--radius); margin-top: 0.5rem; font-weight: 500; }
+    .dti-box.safe { background: rgba(34,197,94,.12); color: #166534; }
+    .dti-box.moderate { background: rgba(245,158,11,.15); color: #92400e; }
+    .dti-box.risky { background: rgba(249,115,22,.15); color: #9a3412; }
+    .dti-box.not_recommended { background: rgba(239,68,68,.12); color: #991b1b; }
+    .scenario-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+    @media (max-width: 600px) { .scenario-cards { grid-template-columns: 1fr; } }
+    .scenario-card { padding: 1rem; border: 2px solid var(--border); border-radius: var(--radius); cursor: pointer; text-align: center; transition: border-color .2s, background .2s; }
+    .scenario-card:hover { border-color: var(--accent); background: rgba(37,99,235,.04); }
+    .scenario-card.active { border-color: var(--accent); background: rgba(37,99,235,.08); }
+    .scenario-card h3 { font-size: 0.95rem; margin: 0 0 0.5rem; color: var(--text); }
+    .scenario-card .vals { font-size: 0.85rem; color: var(--muted); }
+    .explain { font-size: 0.9rem; color: var(--muted); margin-top: 0.5rem; }
+    .help-icon { display: inline-flex; align-items: center; justify-content: center; width: 1.1rem; height: 1.1rem; border-radius: 50%; background: var(--border); color: var(--muted); font-size: 0.75rem; cursor: help; margin-left: 0.25rem; }
+  </style>
+</head>
+<body>
+  {% include 'partials/nav_global.html' %}
+
+  <div class="container finance-page">
+    <div class="plan-layout">
+      <div>
+        <span class="step-badge">Step 2</span>
+        <h2 style="margin-bottom: 1rem;">Property & loan setup</h2>
+
+        <div class="finance-card">
+          <h2>Property</h2>
+          <div class="prop-summary">
+            {% if property.images and property.images|length > 0 %}
+            <img src="{{ url_for('static', filename='images/' + property.images[0]) }}" alt="{{ property.title }}">
+            {% else %}
+            <div class="placeholder">🏠</div>
+            {% endif %}
+            <div class="info">
+              <div class="price">{{ "{:,.0f}".format(property_price) }} JOD</div>
+              <div style="color: var(--muted);">📍 {{ property.location }}, {{ property.city }}</div>
+              <div style="font-size: 0.9rem; margin-top: 0.25rem;">{{ property.title }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="finance-card">
+          <h2>Scenario</h2>
+          <p class="explain">Choose a preset to auto-fill down payment and loan term.</p>
+          <div class="scenario-cards" role="group" aria-label="Scenario presets">
+            <div class="scenario-card active" data-type="conservative" data-down="{{ (property_price * 0.30)|int }}" data-years="20">
+              <h3>Conservative</h3>
+              <div class="vals">30% down · 20 yr</div>
+            </div>
+            <div class="scenario-card" data-type="balanced" data-down="{{ (property_price * 0.20)|int }}" data-years="25">
+              <h3>Balanced</h3>
+              <div class="vals">20% down · 25 yr</div>
+            </div>
+            <div class="scenario-card" data-type="aggressive" data-down="{{ (property_price * 0.10)|int }}" data-years="30">
+              <h3>Aggressive</h3>
+              <div class="vals">10% down · 30 yr</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="finance-card">
+          <h2>Down payment & loan</h2>
+          <div class="slider-row">
+            <label for="downSlider">Down payment (JOD) <span class="help-icon" title="Amount you pay upfront; the rest is the loan" aria-label="Help: down payment">?</span></label>
+            <div class="controls">
+              <input type="range" id="downSlider" min="0" max="{{ property_price|int }}" step="1000" value="{{ (property_price * 0.20)|int }}" aria-label="Down payment amount">
+              <input type="number" id="downVal" min="0" max="{{ property_price|int }}" step="1000" value="{{ (property_price * 0.20)|int }}" aria-label="Down payment value">
+            </div>
+          </div>
+          <div class="slider-row">
+            <label>Loan amount (JOD)</label>
+            <div class="controls">
+              <input type="number" id="loanVal" min="1000" step="1000" value="{{ (property_price * 0.80)|int }}" readonly style="background: var(--bg);">
+            </div>
+            <p class="explain">Price minus down payment. This is what you borrow.</p>
+          </div>
+          <div class="slider-row">
+            <label for="yearsSlider">Loan period (years)</label>
+            <div class="controls">
+              <input type="range" id="yearsSlider" min="5" max="40" step="1" value="25" aria-label="Loan term in years">
+              <input type="number" id="yearsVal" min="5" max="40" value="25" aria-label="Loan years value">
+            </div>
+          </div>
+          <div class="slider-row">
+            <label for="interestSlider">Interest rate (%)</label>
+            <div class="controls">
+              <input type="range" id="interestSlider" min="0" max="25" step="0.25" value="7.5" aria-label="Annual interest rate">
+              <input type="number" id="interestVal" min="0" max="25" step="0.25" value="7.5" aria-label="Interest rate value">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <span class="step-badge">Step 3</span>
+        <h2 style="margin-bottom: 1rem;">Your results</h2>
+
+        <div class="finance-card">
+          <h2>Loan calculator</h2>
+          <div class="result-row"><span>Monthly payment</span><strong id="finance-monthly" aria-live="polite">JD 0</strong></div>
+          <div class="result-row"><span>Total repayment</span><span id="finance-total">JD 0</span></div>
+          <div class="result-row"><span>Total interest</span><span id="finance-total-interest">JD 0</span></div>
+          <p class="explain">Monthly payment stays the same; total is over the full loan term.</p>
+        </div>
+
+        <div class="finance-card">
+          <h2>Affordability</h2>
+          <p class="explain">Debt-to-income (DTI) = (your existing debts + this payment) ÷ your income. Lower is safer.</p>
+          <div class="result-row"><span>Your DTI</span><strong id="dti-pct" aria-live="polite">—%</strong></div>
+          <div id="dti-box" class="dti-box safe" style="display: none;" role="status"></div>
+          <p id="dti-desc" class="explain" style="margin-top: 0.5rem;">Complete your <a href="{{ url_for('finance.profile') }}">financial profile</a> to see this.</p>
+        </div>
+
+        <div class="finance-card">
+          <h2>Savings timeline</h2>
+          <p class="explain">How much you still need to save and how long at your current capacity.</p>
+          <div class="result-row"><span>Remaining to save</span><strong id="savings-remaining">JD 0</strong></div>
+          <div class="result-row"><span>Monthly target</span><strong id="savings-monthly">JD 0</strong></div>
+          <div class="result-row"><span>Years to afford</span><strong id="years-to-afford">—</strong></div>
+        </div>
+
+        <div class="finance-card">
+          <h2>Save this plan</h2>
+          <p class="explain">Save your current numbers to compare later or view the full scenario.</p>
+          <form method="post" action="{{ url_for('finance.property_save_scenario', property_id=property.id) }}">
+            <input type="hidden" name="down_payment" id="save-down">
+            <input type="hidden" name="loan_years" id="save-years">
+            <input type="hidden" name="interest_rate" id="save-rate">
+            <input type="hidden" name="scenario_type" id="save-type" value="custom">
+            <div class="slider-row">
+              <label for="plan_name">Plan name</label>
+              <input type="text" id="plan_name" name="plan_name" class="input" placeholder="{{ property.title[:40] }} Plan" aria-label="Name for this saved plan">
+            </div>
+            <button type="submit" class="btn btn-primary">Save plan</button>
+          </form>
+          <p style="margin-top: 1rem;">
+            <a href="{{ url_for('finance.compare') }}?property_id={{ property.id }}" class="btn btn-ghost" style="text-decoration: none;">Compare strategies for this property</a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/finance_engine.js') }}"></script>
+  <script>
+    (function () {
+      var price = {{ property_price }};
+      var profile = {{ (profile.total_income if profile else 0)|tojson }};
+      var debt = {{ (profile.existing_debt if profile else 0)|tojson }};
+      var savings = {{ (profile.savings if profile else 0)|tojson }};
+      var expenses = {{ (profile.monthly_expenses if profile else 0)|tojson }};
+
+      var downSlider = document.getElementById("downSlider");
+      var downVal = document.getElementById("downVal");
+      var loanVal = document.getElementById("loanVal");
+      var yearsSlider = document.getElementById("yearsSlider");
+      var yearsVal = document.getElementById("yearsVal");
+      var interestSlider = document.getElementById("interestSlider");
+      var interestVal = document.getElementById("interestVal");
+      var saveDown = document.getElementById("save-down");
+      var saveYears = document.getElementById("save-years");
+      var saveRate = document.getElementById("save-rate");
+      var saveType = document.getElementById("save-type");
+      var dtiDesc = document.getElementById("dti-desc");
+
+      function fmt(n) { return (n || 0).toLocaleString("en-JO", { maximumFractionDigits: 0 }); }
+
+      function syncLoanFromDown() {
+        var down = parseFloat(downVal.value) || 0;
+        var loan = Math.max(0, price - down);
+        loanVal.value = Math.round(loan);
+        updateAll();
+      }
+
+      function updateAll() {
+        var down = parseFloat(downVal.value) || 0;
+        var loan = Math.max(0, price - down);
+        var years = parseInt(yearsVal.value, 10) || 25;
+        var rate = parseFloat(interestVal.value) || 7.5;
+
+        var res = window.FinanceEngine.calcLoan(loan, rate, years);
+        document.getElementById("finance-monthly").textContent = "JD " + fmt(res.monthly);
+        document.getElementById("finance-total").textContent = "JD " + fmt(res.total);
+        document.getElementById("finance-total-interest").textContent = "JD " + fmt(res.totalInterest);
+
+        if (profile && profile > 0) {
+          var dtiRes = window.FinanceEngine.dti(debt, res.monthly, profile);
+          document.getElementById("dti-pct").textContent = dtiRes.pct.toFixed(1) + "%";
+          var box = document.getElementById("dti-box");
+          box.style.display = "block";
+          box.className = "dti-box " + dtiRes.risk.level;
+          box.textContent = dtiRes.risk.label + ": " + (dtiRes.pct < 30 ? "Within a safe range." : "Consider a larger down payment or longer term.");
+          if (dtiDesc) dtiDesc.style.display = "none";
+        } else if (dtiDesc) dtiDesc.style.display = "block";
+
+        var remaining = Math.max(0, down - savings);
+        document.getElementById("savings-remaining").textContent = "JD " + fmt(remaining);
+        var months = years * 12;
+        document.getElementById("savings-monthly").textContent = "JD " + fmt(months ? remaining / months : 0);
+        var capacity = (profile && profile > 0 && typeof expenses === "number") ? Math.max(0, profile - expenses) : 0;
+        if (capacity > 0 && remaining > 0) {
+          document.getElementById("years-to-afford").textContent = (remaining / capacity / 12).toFixed(1) + " yr";
+        } else {
+          document.getElementById("years-to-afford").textContent = "—";
+        }
+
+        if (saveDown) saveDown.value = down;
+        if (saveYears) saveYears.value = years;
+        if (saveRate) saveRate.value = rate;
+      }
+
+      downSlider.addEventListener("input", function () { downVal.value = this.value; syncLoanFromDown(); });
+      downVal.addEventListener("input", function () { downSlider.value = this.value; syncLoanFromDown(); });
+      yearsSlider.addEventListener("input", function () { yearsVal.value = this.value; updateAll(); });
+      yearsVal.addEventListener("input", function () { yearsSlider.value = this.value; updateAll(); });
+      interestSlider.addEventListener("input", function () { interestVal.value = this.value; updateAll(); });
+      interestVal.addEventListener("input", function () { interestSlider.value = this.value; updateAll(); });
+
+      document.querySelectorAll(".scenario-card").forEach(function (card) {
+        card.addEventListener("click", function () {
+          document.querySelectorAll(".scenario-card").forEach(function (c) { c.classList.remove("active"); });
+          card.classList.add("active");
+          var down = parseInt(card.getAttribute("data-down"), 10);
+          var years = parseInt(card.getAttribute("data-years"), 10);
+          var type = card.getAttribute("data-type");
+          downVal.value = down;
+          downSlider.value = down;
+          downSlider.max = price;
+          yearsVal.value = years;
+          yearsSlider.value = years;
+          saveType.value = type;
+          syncLoanFromDown();
+        });
+        card.addEventListener("keydown", function (e) {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            card.click();
+          }
+        });
+      });
+
+      syncLoanFromDown();
+    })();
+  </script>
+</body>
+</html>

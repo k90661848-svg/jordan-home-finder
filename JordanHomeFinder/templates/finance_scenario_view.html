@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Masar | مسار لدارك — {{ scenario.name }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    .view-container { padding: 2rem 0; }
+    .view-card { background: var(--card); border-radius: var(--radius); padding: 1.5rem; box-shadow: var(--shadow); border: 1px solid var(--border); margin-bottom: 1.5rem; }
+    .view-card h2 { font-size: 1.15rem; margin: 0 0 1rem; color: var(--text); }
+    .plan-row { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--border); }
+    .plan-total { font-size: 1.4rem; font-weight: 700; color: var(--accent); margin-top: 0.75rem; padding-top: 0.75rem; border-top: 2px solid var(--accent); }
+    .rec-box { background: rgba(37,99,235,.08); border: 1px solid var(--accent); border-radius: 8px; padding: 1rem; margin: 1rem 0; font-size: 0.95rem; color: var(--text); }
+    .stress-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; }
+    .stress-item { background: var(--bg); padding: 0.75rem; border-radius: 8px; text-align: center; }
+    .stress-label { font-size: 0.85rem; color: var(--muted); }
+    .stress-value { font-weight: 700; color: var(--accent); }
+    .chart-wrap { max-width: 400px; height: 260px; margin: 1rem 0; }
+    .back-link { display: inline-block; margin-bottom: 1rem; color: var(--accent); text-decoration: none; }
+    .back-link:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="nav">
+    <div class="container nav-inner">
+      <a class="brand" href="{{ url_for('home_page') }}">
+        <div class="brand-badge">M</div>
+        <div><span class="brand-name">Masar</span><small>مسار لدارك</small></div>
+      </a>
+      <span class="pill">Scenario</span>
+    </div>
+  </div>
+
+  <div class="container view-container">
+    <a href="{{ url_for('finance_dashboard') }}" class="back-link">← Back to Finance</a>
+    <h1 style="margin-bottom: 0.5rem;">{{ scenario.name }}</h1>
+    {% if property %}
+    <p style="color: var(--muted); margin-bottom: 1.5rem;">{{ property.title }} — {{ "{:,}".format(property.price_jod) }} JOD</p>
+    {% else %}
+    <p style="color: var(--muted); margin-bottom: 1.5rem;">{{ "{:,.0f}".format(scenario.home_price) }} JOD</p>
+    {% endif %}
+
+    <div class="view-card">
+      <h2>Monthly housing cost</h2>
+      {% if cost_breakdown %}
+      <div class="plan-row"><span>Principal & interest</span><strong>{{ "{:,.0f}".format(cost_breakdown.principal_interest) }} JOD</strong></div>
+      {% if cost_breakdown.property_tax %}<div class="plan-row"><span>Property tax</span><span>{{ "{:,.0f}".format(cost_breakdown.property_tax) }} JOD</span></div>{% endif %}
+      {% if cost_breakdown.insurance %}<div class="plan-row"><span>Insurance</span><span>{{ "{:,.0f}".format(cost_breakdown.insurance) }} JOD</span></div>{% endif %}
+      {% if cost_breakdown.hoa %}<div class="plan-row"><span>HOA</span><span>{{ "{:,.0f}".format(cost_breakdown.hoa) }} JOD</span></div>{% endif %}
+      {% if cost_breakdown.pmi %}<div class="plan-row"><span>PMI</span><span>{{ "{:,.0f}".format(cost_breakdown.pmi) }} JOD</span></div>{% endif %}
+      <div class="plan-total">Total: {{ "{:,.0f}".format(cost_breakdown.total) }} JOD/month</div>
+      {% else %}
+      <div class="plan-total">Principal & interest: {{ "{:,.0f}".format(plan.monthly) }} JOD/month</div>
+      {% endif %}
+    </div>
+
+    {% if affinity and affinity.recommendation %}
+    <div class="rec-box">{{ affinity.recommendation }}</div>
+    {% endif %}
+
+    {% if stress %}
+    <div class="view-card">
+      <h2>Stress test (estimates)</h2>
+      <div class="stress-grid">
+        <div class="stress-item">
+          <div class="stress-label">Base rate</div>
+          <div class="stress-value">{{ "{:,.0f}".format(stress.base.total) }} JOD</div>
+        </div>
+        <div class="stress-item">
+          <div class="stress-label">+1% rate</div>
+          <div class="stress-value">{{ "{:,.0f}".format(stress.rate_plus_1.total) }} JOD</div>
+        </div>
+        <div class="stress-item">
+          <div class="stress-label">+2% rate</div>
+          <div class="stress-value">{{ "{:,.0f}".format(stress.rate_plus_2.total) }} JOD</div>
+        </div>
+        <div class="stress-item">
+          <div class="stress-label">Income -10%</div>
+          <div class="stress-value">{{ stress.income_drop_10_ratio }}% ratio</div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if cost_breakdown and (cost_breakdown.principal_interest or cost_breakdown.property_tax or cost_breakdown.insurance or cost_breakdown.hoa or cost_breakdown.pmi) %}
+    <div class="view-card">
+      <h2>Payment breakdown (monthly)</h2>
+      <div class="chart-wrap">
+        <canvas id="paymentBreakdownChart"></canvas>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if amortization and amortization|length > 0 %}
+    <div class="view-card">
+      <h2>Amortization (balance over time)</h2>
+      <div class="chart-wrap">
+        <canvas id="amortChart"></canvas>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  {% if cost_breakdown %}
+  <script>
+    (function() {
+      var breakdown = {{ cost_breakdown|tojson }};
+      var labels = [], data = [];
+      if (breakdown.principal_interest && breakdown.principal_interest > 0) { labels.push('Principal & interest'); data.push(breakdown.principal_interest); }
+      if (breakdown.property_tax && breakdown.property_tax > 0) { labels.push('Property tax'); data.push(breakdown.property_tax); }
+      if (breakdown.insurance && breakdown.insurance > 0) { labels.push('Insurance'); data.push(breakdown.insurance); }
+      if (breakdown.hoa && breakdown.hoa > 0) { labels.push('HOA'); data.push(breakdown.hoa); }
+      if (breakdown.pmi && breakdown.pmi > 0) { labels.push('PMI'); data.push(breakdown.pmi); }
+      var el = document.getElementById('paymentBreakdownChart');
+      if (el && labels.length && typeof Chart !== 'undefined') {
+        new Chart(el, {
+          type: 'pie',
+          data: {
+            labels: labels,
+            datasets: [{ data: data, backgroundColor: ['#2563EB','#60A5FA','#93C5FD','#BFDBFE','#DBEAFE'] }]
+          },
+          options: { responsive: true, maintainAspectRatio: false }
+        });
+      }
+    })();
+  </script>
+  {% endif %}
+
+  {% if amortization and amortization|length > 0 %}
+  <script>
+    const labels = {{ amortization|map(attribute='month')|list|tojson }};
+    const balances = {{ amortization|map(attribute='balance')|list|tojson }};
+    new Chart(document.getElementById('amortChart'), {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Loan balance (JOD)',
+          data: balances,
+          borderColor: '#2563EB',
+          backgroundColor: 'rgba(37,99,235,0.1)',
+          fill: true,
+          tension: 0.3
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { beginAtZero: true }
+        }
+      }
+    });
+  </script>
+  {% endif %}
+</body>
+</html>

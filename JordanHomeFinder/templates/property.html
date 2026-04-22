@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Masar | مسار لدارك — {{ property.title }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  {% include 'partials/head_favicon.html' %}
+  <style>
+    .property-detail { padding: 2rem 0; }
+    .property-header h1 { font-size: 2rem; margin-bottom: 0.5rem; color: var(--text); }
+    .property-price-large { font-size: 1.75rem; font-weight: 700; color: var(--accent); margin-bottom: 1rem; }
+    .property-location-large { font-size: 1.1rem; color: var(--muted); margin-bottom: 2rem; }
+    .image-gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+    .gallery-image { width: 100%; height: 220px; object-fit: cover; border-radius: var(--radius); box-shadow: var(--shadow); }
+    .gallery-placeholder {
+      width: 100%; height: 220px;
+      background: linear-gradient(135deg, var(--primary2), var(--accent));
+      border-radius: var(--radius);
+      display: flex; align-items: center; justify-content: center;
+      color: white; font-size: 2.5rem;
+    }
+    .property-specs {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+      margin: 2rem 0;
+      padding: 1.5rem;
+      background: var(--bg);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+    }
+    .spec-item { text-align: center; }
+    .spec-label { font-size: 0.9rem; color: var(--muted); margin-bottom: 0.25rem; }
+    .spec-value { font-size: 1.25rem; font-weight: 600; color: var(--text); }
+    .property-description { margin: 2rem 0; padding: 1.5rem; background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); border: 1px solid var(--border); }
+    .property-description h2 { font-size: 1.35rem; margin-bottom: 1rem; color: var(--text); }
+    .property-description p { line-height: 1.8; color: var(--muted); white-space: pre-line; }
+    .property-features h2 { font-size: 1.35rem; margin-bottom: 1rem; color: var(--text); }
+    .features-list { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+    .feature-tag {
+      background: rgba(37,99,235,.1);
+      color: var(--accent);
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+    .back-link { display: inline-block; margin-bottom: 2rem; color: var(--accent); text-decoration: none; font-weight: 500; }
+    .back-link:hover { text-decoration: underline; }
+    .property-source-row { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; margin-top: 1rem; }
+    .btn-original-listing {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      padding: 0.5rem 1rem; border-radius: var(--radius);
+      background: rgba(37,99,235,.08); color: var(--accent);
+      border: 1px solid var(--border); font-weight: 500; font-size: var(--text-small);
+      text-decoration: none; transition: background var(--ease-out), border-color var(--ease-out);
+    }
+    .btn-original-listing:hover { background: rgba(37,99,235,.15); border-color: var(--accent); }
+    .property-source-text { font-size: 0.9rem; color: var(--muted); }
+    .affordability-badge.affordability-within_budget { background: rgba(34,197,94,.15); color: #166534; }
+    .affordability-badge.affordability-stretch { background: rgba(245,158,11,.15); color: #92400e; }
+    .affordability-badge.affordability-above_budget { background: rgba(239,68,68,.12); color: #991b1b; }
+  </style>
+</head>
+<body>
+  {% include 'partials/nav_global.html' %}
+
+  <div class="container property-detail">
+    <a href="{{ url_for('listings_page') }}" class="back-link">← Back to Listings</a>
+
+    <div class="property-header">
+      <h1>{{ property.title }}</h1>
+      <div class="property-price-large">{{ "{:,}".format(property.price_jod) }} JOD</div>
+      <div class="property-location-large">📍 {{ property.location }}, {{ property.city }} • {{ property.type|title }}</div>
+      <div class="property-source-row">
+        <a href="https://www.homes-jordan.com/" target="_blank" rel="noopener noreferrer" class="btn-original-listing">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+          View Original Listing
+        </a>
+        <span class="property-source-text">Source: Homes Jordan</span>
+      </div>
+    </div>
+
+    <div class="image-gallery">
+      {% if property.images and property.images|length > 0 %}
+        {% for img in property.images %}
+        <img src="{{ url_for('static', filename='images/' + img) }}" alt="{{ property.title }}" class="gallery-image">
+        {% endfor %}
+      {% else %}
+        <div class="gallery-placeholder">🏠</div>
+      {% endif %}
+    </div>
+
+    <div class="property-specs">
+      <div class="spec-item">
+        <div class="spec-label">Bedrooms</div>
+        <div class="spec-value">{{ property.bedrooms }}</div>
+      </div>
+      <div class="spec-item">
+        <div class="spec-label">Bathrooms</div>
+        <div class="spec-value">{{ property.bathrooms }}</div>
+      </div>
+      <div class="spec-item">
+        <div class="spec-label">Size</div>
+        <div class="spec-value">{{ property.size_sqm }} m²</div>
+      </div>
+      <div class="spec-item">
+        <div class="spec-label">Furnished</div>
+        <div class="spec-value">{{ 'Yes' if property.furnished else 'No' }}</div>
+      </div>
+      <div class="spec-item">
+        <div class="spec-label">Parking</div>
+        <div class="spec-value">{{ 'Yes' if property.parking else 'No' }}</div>
+      </div>
+    </div>
+
+    <div class="property-description">
+      <h2>Description</h2>
+      <p>{{ property.description or 'No description available.' }}</p>
+    </div>
+
+    <section class="property-features finance-panel" style="margin-top: 2rem; padding: 1.5rem; background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); border: 1px solid var(--border);" aria-labelledby="finance-panel-heading">
+      <h2 id="finance-panel-heading" style="color: var(--text); margin-top: 0; font-size: 1.35rem;">💰 Plan Financing for This Home</h2>
+      <p style="margin: 0 0 1rem; color: var(--muted); font-size: 1rem;">Estimate monthly payments and plan your savings. Your profile is used to show affordability.</p>
+      {% if affordability_badge %}
+      <div style="margin-bottom: 1rem;">
+        <span class="affordability-badge affordability-{{ affordability_badge }}" style="display: inline-block; padding: 0.35rem 0.85rem; border-radius: 999px; font-weight: 600; font-size: 0.9rem;">
+          {% if affordability_badge == 'within_budget' %}Within Budget{% elif affordability_badge == 'stretch' %}Stretch{% else %}Above Budget{% endif %}
+        </span>
+      </div>
+      {% endif %}
+      <div class="finance-mini-stats" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+        <div style="background: var(--bg); padding: 0.75rem 1rem; border-radius: var(--radius); border: 1px solid var(--border);">
+          <div style="font-size: 0.85rem; color: var(--muted); margin-bottom: 0.25rem;">Est. monthly (20% down)</div>
+          <div style="font-weight: 700; color: var(--accent); font-size: 1.1rem;">{{ "{:,.0f}".format(est_monthly) }} JOD</div>
+        </div>
+        <div style="background: var(--bg); padding: 0.75rem 1rem; border-radius: var(--radius); border: 1px solid var(--border);">
+          <div style="font-size: 0.85rem; color: var(--muted); margin-bottom: 0.25rem;">Suggested down (20%)</div>
+          <div style="font-weight: 700; color: var(--accent); font-size: 1.1rem;">{{ "{:,.0f}".format(down_20) }} JOD</div>
+        </div>
+        {% if months_to_goal is not none %}
+        <div style="background: var(--bg); padding: 0.75rem 1rem; border-radius: var(--radius); border: 1px solid var(--border);">
+          <div style="font-size: 0.85rem; color: var(--muted); margin-bottom: 0.25rem;">Months to goal</div>
+          <div style="font-weight: 700; color: var(--accent); font-size: 1.1rem;">~{{ months_to_goal|int }} months</div>
+        </div>
+        {% endif %}
+      </div>
+      <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center;">
+        <a href="{{ url_for('finance.property_plan', property_id=property.id) }}" class="btn btn-primary" style="text-decoration: none;">Start Financial Plan</a>
+        <a href="{{ url_for('finance.compare') }}?property_id={{ property.id }}" class="btn btn-ghost" style="text-decoration: none;">Compare strategies</a>
+      </div>
+    </section>
+
+    {% if property.features and property.features|length > 0 %}
+    <div class="property-features">
+      <h2>Features</h2>
+      <div class="features-list">
+        {% for feature in property.features %}
+        <span class="feature-tag">{{ feature }}</span>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+  {% include 'partials/footer_global.html' %}
+</body>
+</html>

@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Masar | مسار لدارك — Listings</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  {% include 'partials/head_favicon.html' %}
+  <style>
+    .listings-container { padding: 2rem 0; }
+    .listings-grid { display: grid; gap: 2rem; margin-top: 2rem; }
+    .property-card {
+      background: var(--card);
+      border-radius: var(--radius-lg);
+      overflow: visible;
+      box-shadow: var(--shadow-card);
+      transition: transform var(--ease-out), box-shadow var(--ease-out);
+      display: flex;
+      flex-direction: column;
+      border: 1px solid var(--border);
+    }
+    @media (min-width: 768px) {
+      .property-card { flex-direction: row; min-height: 250px; }
+    }
+    .property-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-hover);
+    }
+    .property-image-wrapper {
+      flex-shrink: 0;
+      width: 100%;
+      height: 200px;
+      overflow: hidden;
+      border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    }
+    @media (min-width: 768px) {
+      .property-image-wrapper { width: 350px; min-height: 250px; height: auto; align-self: stretch; border-radius: var(--radius-lg) 0 0 var(--radius-lg); }
+    }
+    .property-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      background: var(--bg);
+    }
+    .property-placeholder {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, var(--primary2), var(--accent));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 3rem;
+    }
+    .property-info { padding: 1.5rem; flex: 1; display: flex; flex-direction: column; justify-content: space-between; overflow: visible; min-width: 0; }
+    .property-title { font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--text); }
+    .property-price { font-size: 1.5rem; font-weight: 700; color: var(--accent); margin-bottom: 0.5rem; }
+    .property-location { color: var(--muted); margin-bottom: 1rem; font-size: 0.9rem; }
+    .property-badges { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1rem 0; flex-shrink: 0; overflow: visible; min-height: 1.75rem; align-items: center; }
+    .badge {
+      background: rgba(37,99,235,.1);
+      color: var(--accent);
+      padding: 0.35rem 0.75rem;
+      border-radius: var(--radius);
+      font-size: var(--text-tiny);
+      font-weight: 500;
+      line-height: 1.2;
+      flex-shrink: 0;
+    }
+    .badge-primary { background: var(--accent); color: var(--text-on-blue); }
+    .property-actions { display: flex; gap: 0.75rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border); flex-wrap: wrap; }
+    .btn-view {
+      display: inline-block;
+      background: linear-gradient(135deg, var(--primary2), var(--accent));
+      color: var(--text-on-blue);
+      padding: 0.5rem 1rem;
+      border-radius: var(--radius-md);
+      text-decoration: none;
+      font-weight: 600;
+      font-size: var(--text-small);
+      box-shadow: var(--shadow-btn);
+      transition: transform var(--ease-out), box-shadow var(--ease-out);
+    }
+    .btn-view:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(37,99,235,.4); color: var(--text-on-blue); }
+    .listings-header { text-align: center; margin-bottom: 2rem; }
+    .listings-header h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+    .listings-count { color: var(--muted); font-size: 1.1rem; }
+    .affordability-badge.affordability-within_budget { background: rgba(34,197,94,.15); color: #166534; }
+    .affordability-badge.affordability-stretch { background: rgba(245,158,11,.15); color: #92400e; }
+    .affordability-badge.affordability-above_budget { background: rgba(239,68,68,.12); color: #991b1b; }
+  </style>
+</head>
+<body>
+  {% include 'partials/nav_global.html' %}
+
+  <div class="container listings-container">
+    <div class="listings-header">
+      <h1>Property Listings</h1>
+      <p class="listings-count">Found {{ properties|length }} properties in Amman</p>
+    </div>
+
+    <div class="listings-grid">
+      {% for property in properties %}
+      <div class="property-card">
+        <div class="property-image-wrapper">
+          {% if property.images and property.images|length > 0 %}
+            <img src="{{ url_for('static', filename='images/' + property.images[0]) }}"
+                 alt="{{ property.title }}"
+                 class="property-image"
+                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+            <div class="property-placeholder" style="display: none;">🏠</div>
+          {% else %}
+            <div class="property-placeholder">🏠</div>
+          {% endif %}
+        </div>
+        <div class="property-info">
+          <div>
+            <h3 class="property-title">{{ property.title }}</h3>
+            <div class="property-price">{{ "{:,}".format(property.price_jod) }} JOD</div>
+            <div class="property-location">📍 {{ property.location }}, {{ property.city }}</div>
+            <div class="property-badges">
+              <span class="badge badge-primary">{{ property.type|title }}</span>
+              {% if property.bedrooms > 0 %}<span class="badge">{{ property.bedrooms }} Bedrooms</span>{% endif %}
+              <span class="badge">{{ property.bathrooms }} Bathrooms</span>
+              <span class="badge">{{ property.size_sqm }} m²</span>
+              {% if property.furnished %}<span class="badge">Furnished</span>{% endif %}
+              {% if property.parking %}<span class="badge">Parking</span>{% endif %}
+            </div>
+          </div>
+          <div class="property-actions">
+            {% if property.affordability_badge %}
+            <span class="badge affordability-badge affordability-{{ property.affordability_badge }}">
+              {% if property.affordability_badge == 'within_budget' %}Within Budget{% elif property.affordability_badge == 'stretch' %}Stretch{% else %}Above Budget{% endif %}
+            </span>
+            {% endif %}
+            {% if property.estimated_monthly %}<span class="badge" style="background: rgba(37,99,235,.15); color: var(--muted);">~{{ "{:,.0f}".format(property.estimated_monthly) }} JOD/mo</span>{% endif %}
+            <a href="{{ url_for('property_detail_page', property_id=property.id) }}" class="btn-view">View Details →</a>
+            <a href="{{ url_for('finance.property_plan', property_id=property.id) }}" class="btn-view" style="background: var(--primary2);">💰 Plan Financing</a>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    {% if properties|length == 0 %}
+    <div style="text-align: center; padding: 4rem 2rem;">
+      <p style="font-size: 1.2rem; color: var(--muted);">No properties found. Try adjusting your search criteria.</p>
+      <a href="{{ url_for('home_page') }}" style="display: inline-block; margin-top: 1rem; color: var(--accent);">← Back to Home</a>
+    </div>
+    {% endif %}
+  </div>
+  {% include 'partials/footer_global.html' %}
+</body>
+</html>

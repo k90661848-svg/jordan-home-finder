@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Masar | Saved plans</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    .finance-page { max-width: 800px; margin: 0 auto; }
+    .card-head-row { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.25rem; }
+    .compare-label { display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.9rem; color: var(--muted); }
+    .compare-label input { width: 1.1rem; height: 1.1rem; accent-color: var(--accent); }
+    .compare-bar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+    .compare-count { font-size: 0.95rem; color: var(--muted); }
+  </style>
+</head>
+<body>
+  {% include 'partials/nav_global.html' %}
+
+  <div class="container finance-page">
+    <h1>Saved plans</h1>
+    <p class="subtitle">Plans you saved from the property planner. Open one to see the full scenario.</p>
+
+    {% if plans and compare_available|default(false) %}
+    <div class="compare-bar finance-card" style="margin-bottom: 1.25rem;">
+      <span class="compare-count" data-count="0">0 selected</span>
+      <button type="button" class="btn btn-primary" id="compareSelectedBtn" disabled>Compare Selected Scenarios</button>
+      {% if need_more_plans|default(true) %}<p style="margin:0.5rem 0 0; font-size:0.85rem; color:var(--muted);">Select 2–4 plans to compare.</p>{% endif %}
+    </div>
+    {% endif %}
+    {% if plans %}
+    {% for p in plans %}
+    <div class="finance-card">
+      <div class="card-head-row">
+        {% if p.scenario %}
+        <label class="compare-label">
+          <input type="checkbox" class="compare-check" value="{{ p.scenario.id }}" data-name="{{ p.name|e }}">
+          <span class="compare-label-text">Compare</span>
+        </label>
+        {% endif %}
+        <h2 style="flex: 1; margin: 0;">{{ p.name }}</h2>
+      </div>
+      <div class="meta">Saved {{ p.created_at.strftime('%Y-%m-%d') if p.created_at else '' }}</div>
+      {% if p.scenario %}
+      <p class="summary">
+        {{ "{:,.0f}".format(p.scenario.property_price) }} JOD · {{ "{:,.0f}".format(p.scenario.down_payment) }} down · {{ p.scenario.loan_years }} yr · {{ "{:,.0f}".format(p.scenario.monthly_payment) }} JOD/mo
+      </p>
+      <div class="row">
+        <a href="{{ url_for('finance.scenario_view', scenario_id=p.scenario.id) }}" class="btn btn-primary" style="text-decoration: none;">View full scenario</a>
+        {% if p.scenario.property_id %}
+        <a href="{{ url_for('finance.property_plan', property_id=p.scenario.property_id) }}" style="color: var(--accent); font-weight: 500; text-decoration: none;">Edit in property plan</a>
+        {% endif %}
+        <form method="post" action="{{ url_for('finance.saved_plan_delete', plan_id=p.id) }}" style="display:inline;" onsubmit="return confirm('Remove this saved plan?');">
+          <button type="submit" class="btn btn-ghost" style="color: var(--muted);">Remove</button>
+        </form>
+      </div>
+      {% else %}
+      <div class="row">
+        <form method="post" action="{{ url_for('finance.saved_plan_delete', plan_id=p.id) }}" style="display:inline;" onsubmit="return confirm('Remove this saved plan?');">
+          <button type="submit" class="btn btn-ghost" style="color: var(--muted);">Remove</button>
+        </form>
+      </div>
+      {% endif %}
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="finance-card">
+      <p style="color: var(--muted); margin: 0 0 1rem;">No saved plans yet. Plan a purchase from a property and click “Save plan”.</p>
+      <a href="{{ url_for('listings_page') }}" class="btn btn-primary" style="text-decoration: none;">View listings</a>
+    </div>
+    {% endif %}
+  </div>
+
+  <script>
+  (function () {
+    var checkboxes = document.querySelectorAll('.compare-check');
+    var countEl = document.querySelector('.compare-count');
+    var btn = document.getElementById('compareSelectedBtn');
+    var maxCompare = 4;
+
+    function updateState() {
+      var checked = Array.prototype.filter.call(checkboxes, function (c) { return c.checked; });
+      var n = checked.length;
+      if (countEl) countEl.textContent = n + ' selected';
+      if (btn) btn.disabled = n < 2 || n > maxCompare;
+      checkboxes.forEach(function (c) {
+        c.disabled = n >= maxCompare && !c.checked;
+      });
+    }
+
+    checkboxes.forEach(function (c) { c.addEventListener('change', updateState); });
+    if (btn) {
+      btn.addEventListener('click', function () {
+        var ids = Array.prototype.filter.call(checkboxes, function (c) { return c.checked && c.value; }).map(function (c) { return c.value.trim(); }).filter(Boolean);
+        if (ids.length >= 2 && ids.length <= maxCompare) {
+          window.location.href = '{{ url_for("finance.compare") }}?ids=' + ids.join(',');
+        }
+      });
+    }
+    updateState();
+  })();
+  </script>
+</body>
+</html>

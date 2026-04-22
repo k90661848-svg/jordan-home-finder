@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Masar | مسار لدارك — Financial Profile</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    .profile-container { padding: 2rem 0; max-width: 540px; }
+    .profile-card { background: var(--card); border-radius: var(--radius); padding: 1.5rem; box-shadow: var(--shadow); border: 1px solid var(--border); margin-bottom: 1rem; }
+    .form-group { margin-bottom: 1.25rem; }
+    .form-group label { display: block; font-weight: 500; margin-bottom: 0.4rem; color: var(--text); }
+    .form-group input { width: 100%; padding: 0.65rem; border-radius: 8px; border: 1px solid var(--border); box-sizing: border-box; }
+    .form-group small { color: var(--muted); font-size: 0.85rem; margin-top: 0.25rem; display: block; }
+    .btn-submit { background: var(--accent); color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
+    .btn-submit:hover { background: var(--primary2); }
+    .back-link { display: inline-block; margin-bottom: 1rem; color: var(--accent); text-decoration: none; }
+    .back-link:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="nav">
+    <div class="container nav-inner">
+      <a class="brand" href="{{ url_for('home_page') }}">
+        <div class="brand-badge">M</div>
+        <div><span class="brand-name">Masar</span><small>مسار لدارك</small></div>
+      </a>
+      <span class="pill">Financial Profile</span>
+    </div>
+  </div>
+
+  <div class="container profile-container">
+    <a href="{{ url_for('finance_dashboard') }}" class="back-link">← Back to Finance</a>
+    <h1 style="margin-bottom: 1.5rem;">Your Financial Profile</h1>
+    <p style="color: var(--muted); margin-bottom: 1.5rem;">Used for affordability estimates and savings goals. All values in JOD.</p>
+
+    <form method="post" action="{{ url_for('finance_profile') }}">
+      <div class="profile-card">
+        <div class="form-group">
+          <label for="monthly_income">Monthly income</label>
+          <input type="number" id="monthly_income" name="monthly_income" min="0" step="100" value="{{ profile.monthly_income or '' }}" placeholder="e.g. 1500">
+          <small>Gross monthly income (salary, bonuses, etc.)</small>
+        </div>
+        <div class="form-group">
+          <label for="monthly_expenses">Monthly expenses</label>
+          <input type="number" id="monthly_expenses" name="monthly_expenses" min="0" step="50" value="{{ profile.monthly_expenses or '' }}" placeholder="e.g. 800">
+          <small>Rent, utilities, food, transport, etc.</small>
+        </div>
+        <div class="form-group">
+          <label for="existing_savings">Existing savings</label>
+          <input type="number" id="existing_savings" name="existing_savings" min="0" step="500" value="{{ profile.existing_savings or '' }}" placeholder="e.g. 10000">
+        </div>
+        <div class="form-group">
+          <label for="emergency_fund_target">Emergency fund (months of expenses)</label>
+          <input type="number" id="emergency_fund_target" name="emergency_fund_target" min="0" step="1" value="{{ profile.emergency_fund_target or '6' }}" placeholder="e.g. 6">
+          <small>Target months of expenses to keep in reserve</small>
+        </div>
+      </div>
+      <button type="submit" class="btn-submit">Save profile</button>
+    </form>
+  </div>
+</body>
+</html>

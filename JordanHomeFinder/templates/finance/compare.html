@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Masar | {% if selected_scenarios is defined and selected_scenarios and selected_scenarios|length >= 2 %}Scenario comparison{% else %}Compare financial strategies{% endif %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    .compare-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
+    .scenario-compare-card {
+      background: var(--bg);
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .scenario-compare-card.active { border-color: var(--accent); box-shadow: var(--shadow); }
+    .scenario-compare-card h3 { font-size: 1rem; margin: 0 0 0.5rem; color: var(--text); }
+    .scenario-compare-card .row { display: flex; justify-content: space-between; padding: 0.35rem 0; font-size: 0.9rem; }
+    .scenario-compare-card .row .label { color: var(--muted); }
+    .scenario-compare-card .row .val { font-weight: 600; color: var(--text); }
+    .scenario-compare-card .afford-tag { margin-top: 0.5rem; padding: 0.25rem 0.5rem; border-radius: 8px; font-size: 0.8rem; font-weight: 600; }
+    .scenario-compare-card .afford-within { background: rgba(34,197,94,.15); color: #166534; }
+    .scenario-compare-card .afford-stretch { background: rgba(245,158,11,.15); color: #92400e; }
+    .scenario-compare-card .afford-above { background: rgba(239,68,68,.12); color: #991b1b; }
+    .add-scenario-form { display: grid; grid-template-columns: 1fr auto auto auto auto; gap: 0.75rem; align-items: end; flex-wrap: wrap; }
+    @media (max-width: 768px) { .add-scenario-form { grid-template-columns: 1fr 1fr; } }
+    .add-scenario-form label { display: block; font-size: 0.85rem; font-weight: 500; margin-bottom: 0.25rem; color: var(--muted); }
+    .add-scenario-form .input { padding: 0.5rem; }
+    .btn-sm { padding: 0.5rem 0.75rem; font-size: 0.9rem; }
+    .help-text { font-size: 0.9rem; color: var(--muted); margin-top: 0.5rem; }
+    /* Multi-scenario comparison view */
+    .comparison-view { padding: 2rem 0 3rem; max-width: 1200px; margin: 0 auto; }
+    .comparison-view h1 { font-size: 1.75rem; margin: 0 0 0.5rem; color: var(--text); }
+    .comparison-view .subtitle { color: var(--muted); margin-bottom: 1.5rem; font-size: 1.05rem; }
+    .insights-block { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; margin-bottom: 1.5rem; }
+    .insights-block h2 { font-size: 1.1rem; margin: 0 0 0.75rem; color: var(--text); font-weight: 600; }
+    .insights-block ul { margin: 0; padding-left: 1.25rem; color: var(--text); font-size: 0.95rem; line-height: 1.6; }
+    .comparison-table-wrap { overflow-x: auto; margin-bottom: 1.5rem; }
+    .comparison-table { width: 100%; min-width: 600px; border-collapse: collapse; background: var(--card); border-radius: var(--radius-lg); box-shadow: var(--shadow-card); overflow: hidden; border: 1px solid var(--border); }
+    .comparison-table th, .comparison-table td { padding: 0.75rem 1rem; text-align: left; border-bottom: 1px solid var(--border); font-size: var(--text-small); }
+    .comparison-table th { background: var(--bg-soft); color: var(--muted); font-weight: 600; }
+    .comparison-table tr:last-child td { border-bottom: none; }
+    .comparison-table .metric-name { color: var(--muted); font-weight: 500; }
+    .comparison-table .cell-lowest { background: rgba(37,99,235,.1); color: var(--primary2); font-weight: 600; }
+    .comparison-table .cell-highest-equity { background: rgba(37,99,235,.08); color: var(--primary2); font-weight: 600; }
+    .comparison-table .cell-risky { background: rgba(239,68,68,.08); color: #991b1b; }
+    .comparison-table .cell-diff { color: var(--muted); font-size: var(--text-tiny); }
+    .charts-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-lg); margin-bottom: var(--space-lg); }
+    @media (max-width: 900px) { .charts-row { grid-template-columns: 1fr; } }
+    .chart-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: var(--space-lg); box-shadow: var(--shadow-card); }
+    .chart-card h3 { font-size: 1rem; margin: 0 0 0.75rem; color: var(--text); font-weight: 600; }
+    .chart-container { position: relative; height: 260px; }
+    .comparison-actions { margin-bottom: 1.5rem; display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; }
+  </style>
+</head>
+<body>
+  {% include 'partials/nav_global.html' %}
+
+  <div class="container finance-page">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+      <div class="flash-messages" style="margin-bottom:1rem;">
+        {% for category, msg in messages %}
+        <p class="flash {{ category }}" style="padding:0.5rem 1rem; border-radius:var(--radius); background:var(--card); border:1px solid var(--border); color:var(--text);">{{ msg }}</p>
+        {% endfor %}
+      </div>
+      {% endif %}
+    {% endwith %}
+    {% if selected_scenarios is defined and selected_scenarios and selected_scenarios|length >= 2 %}
+    <!-- ========== MULTI-SCENARIO COMPARISON VIEW ========== -->
+    <div class="comparison-view">
+      <div class="comparison-actions">
+        <a href="{{ url_for('finance.saved_plans') }}" class="btn btn-ghost">← Back to Saved plans</a>
+      </div>
+      <h1>Scenario comparison</h1>
+      <p class="subtitle">Compare {{ selected_scenarios|length }} scenarios side-by-side.</p>
+
+      <div class="insights-block">
+        <h2>Summary insights</h2>
+        <ul id="insightsList"></ul>
+      </div>
+
+      <div class="comparison-table-wrap">
+        <table class="comparison-table" id="comparisonTable">
+          <thead>
+            <tr>
+              <th class="metric-name">Metric</th>
+              {% for s in selected_scenarios %}
+              <th>{{ s.name }}</th>
+              {% endfor %}
+              <th>Difference from lowest cost</th>
+            </tr>
+          </thead>
+          <tbody id="comparisonTableBody"></tbody>
+        </table>
+      </div>
+
+      <div class="charts-row">
+        <div class="chart-card">
+          <h3>Monthly payment comparison</h3>
+          <div class="chart-container"><canvas id="chartMonthly"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <h3>Total interest comparison</h3>
+          <div class="chart-container"><canvas id="chartInterest"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <h3>Equity growth over time</h3>
+          <div class="chart-container"><canvas id="chartEquity"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <h3>Cost over time</h3>
+          <div class="chart-container"><canvas id="chartCost"></canvas></div>
+        </div>
+      </div>
+    </div>
+    <script>
+    (function () {
+      var scenarios = {{ selected_scenarios|tojson }};
+      if (!scenarios || scenarios.length < 2) return;
+
+      // --- PHASE 7: Debug validation before rendering ---
+      var selectedIds = scenarios.map(function (s) { return s.id; });
+      console.log('[Compare] Selected scenario IDs:', selectedIds);
+      console.log('[Compare] Scenario count:', scenarios.length);
+      scenarios.forEach(function (s, i) {
+        console.log('[Compare] Scenario', i, 'id=' + s.id, 'name=' + (s.name || ''), 'monthly=' + s.monthly_payment, 'total_payment=' + s.total_payment, 'equity_5y=' + s.equity_5y);
+      });
+
+      var hasChart = typeof window.Chart !== 'undefined';
+
+      function balanceAfterMonths(principal, ratePct, years, months) {
+        if (principal <= 0 || years <= 0 || months <= 0) return principal;
+        var r = ratePct / 100 / 12;
+        var n = years * 12;
+        var pmt = r < 1e-10 ? principal / n : principal * (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+        var bal = principal;
+        for (var i = 0; i < months && bal > 0.01; i++) {
+          var interest = bal * r;
+          bal = Math.max(0, bal - (pmt - interest));
+        }
+        return bal;
+      }
+      function equityAtYear(propertyPrice, loanAmount, ratePct, years, atYear) {
+        var months = Math.min(atYear * 12, years * 12);
+        var bal = balanceAfterMonths(loanAmount, ratePct, years, months);
+        return Math.max(0, propertyPrice - bal);
+      }
+      function costAtYear(monthly, years) {
+        var months = Math.min(years * 12, 30 * 12);
+        return monthly * months;
+      }
+
+      // --- PHASE 5: Difference baseline (lowest total repayment), no NaN ---
+      function toNum(v) { var n = Number(v); return (n !== n || n === 0) ? 0 : n; }
+      var totals = scenarios.map(function (s) { return toNum(s.total_payment); });
+      var lowestTotalPayment = totals.length ? Math.min.apply(null, totals) : 0;
+      if (lowestTotalPayment < 0) lowestTotalPayment = 0;
+      console.log('[Compare] Baseline (lowest total repayment):', lowestTotalPayment);
+      console.log('[Compare] Difference from baseline:', scenarios.map(function (s) { return toNum(s.total_payment) - lowestTotalPayment; }));
+      var minMonthlyIdx = scenarios.reduce(function (best, s, i) { return toNum(s.monthly_payment) < toNum(scenarios[best].monthly_payment) ? i : best; }, 0);
+      var minInterestIdx = scenarios.reduce(function (best, s, i) { return toNum(s.total_interest) < toNum(scenarios[best].total_interest) ? i : best; }, 0);
+      var maxEquity5Idx = scenarios.reduce(function (best, s, i) { return toNum(s.equity_5y) > toNum(scenarios[best].equity_5y) ? i : best; }, 0);
+      var maxEquity10Idx = scenarios.reduce(function (best, s, i) { return toNum(s.equity_10y) > toNum(scenarios[best].equity_10y) ? i : best; }, 0);
+      var riskyIndices = {};
+      scenarios.forEach(function (s, i) { if ((s.risk_label || '').toLowerCase().indexOf('risky') >= 0 || (s.risk_label || '').toLowerCase().indexOf('high') >= 0) riskyIndices[i] = true; });
+
+      function fmt(n) { return (n == null ? 0 : n).toLocaleString('en-JO', { maximumFractionDigits: 0 }); }
+      function fmtPct(n) { return (n == null ? 0 : n).toFixed(1) + '%'; }
+
+      var insights = [];
+      var names = scenarios.map(function (s) { return s.name; });
+      if (minInterestIdx !== minMonthlyIdx && scenarios[minInterestIdx] && scenarios[minMonthlyIdx]) {
+        var saveInterest = scenarios[minMonthlyIdx].total_interest - scenarios[minInterestIdx].total_interest;
+        if (saveInterest > 0) insights.push(names[minInterestIdx] + ' saves ' + fmt(saveInterest) + ' JOD in total interest compared to ' + names[minMonthlyIdx] + '.');
+      }
+      scenarios.forEach(function (s, i) {
+        if (i === 0) return;
+        var diff = s.monthly_payment - scenarios[0].monthly_payment;
+        if (Math.abs(diff) > 1) insights.push(names[i] + ' has ' + (diff > 0 ? 'higher' : 'lower') + ' monthly payment by ' + fmt(Math.abs(diff)) + ' JOD vs ' + names[0] + '.');
+      });
+      if (maxEquity5Idx >= 0 && scenarios[maxEquity5Idx]) insights.push(names[maxEquity5Idx] + ' builds the most equity after 5 years (' + fmt(scenarios[maxEquity5Idx].equity_5y) + ' JOD).');
+      scenarios.forEach(function (s, i) {
+        if (riskyIndices[i]) insights.push(names[i] + ' is classified as ' + (s.risk_label || 'Risky') + ' due to DTI.');
+      });
+      var listEl = document.getElementById('insightsList');
+      (insights.slice(0, 5) || ['Compare the metrics below to choose the best option.']).forEach(function (text) {
+        var li = document.createElement('li');
+        li.textContent = text;
+        listEl.appendChild(li);
+      });
+
+      var metrics = [
+        { key: 'down_payment', label: 'Down payment (JOD)', fmt: fmt },
+        { key: 'scenario_type', label: 'Loan type', fmt: function (v) { return v || '—'; } },
+        { key: 'interest_rate', label: 'Interest rate', fmt: fmtPct },
+        { key: 'loan_years', label: 'Loan term', fmt: function (v) { return (v || 0) + ' yr'; } },
+        { key: 'monthly_payment', label: 'Monthly payment', fmt: fmt, highlightLow: 'monthly' },
+        { key: 'total_interest', label: 'Total interest', fmt: fmt, highlightLow: 'interest' },
+        { key: 'total_payment', label: 'Total repayment', fmt: fmt },
+        { key: 'cost_5y', label: '5-year cost', fmt: fmt },
+        { key: 'cost_10y', label: '10-year cost', fmt: fmt },
+        { key: 'equity_5y', label: 'Equity after 5 years', fmt: fmt, highlightHigh: 'equity5' },
+        { key: 'equity_10y', label: 'Equity after 10 years', fmt: fmt, highlightHigh: 'equity10' },
+        { key: 'affordability', label: 'Affordability score', fmt: function (v) { return v || '—'; } },
+        { key: 'risk_label', label: 'Risk label', fmt: function (v) { return v || '—'; }, highlightRisky: true },
+      ];
+      var tbody = document.getElementById('comparisonTableBody');
+      metrics.forEach(function (m) {
+        var row = document.createElement('tr');
+        var cellMetric = document.createElement('td');
+        cellMetric.className = 'metric-name';
+        cellMetric.textContent = m.label;
+        row.appendChild(cellMetric);
+        scenarios.forEach(function (s, i) {
+          var val = s[m.key];
+          var td = document.createElement('td');
+          var text = m.fmt(val);
+          if (m.highlightLow === 'monthly' && i === minMonthlyIdx) td.className = 'cell-lowest';
+          else if (m.highlightLow === 'interest' && i === minInterestIdx) td.className = 'cell-lowest';
+          else if (m.highlightHigh === 'equity5' && i === maxEquity5Idx) td.className = 'cell-highest-equity';
+          else if (m.highlightHigh === 'equity10' && i === maxEquity10Idx) td.className = 'cell-highest-equity';
+          else if (m.highlightRisky && riskyIndices[i]) td.className = 'cell-risky';
+          td.textContent = text;
+          row.appendChild(td);
+        });
+        var diffCell = document.createElement('td');
+        diffCell.className = 'cell-diff';
+        if (m.key === 'total_payment') {
+          var parts = scenarios.map(function (s) {
+            var d = toNum(s.total_payment) - lowestTotalPayment;
+            if (d === 0) return '—';
+            return (d > 0 ? '+' : '') + fmt(Math.round(d)) + ' JOD';
+          });
+          diffCell.textContent = parts.join('  ·  ');
+        } else {
+          diffCell.textContent = '—';
+        }
+        row.appendChild(diffCell);
+        tbody.appendChild(row);
+      });
+
+      // --- PHASE 4: Chart binding by scenario id, no duplicates ---
+      var brandColors = ['#1e3a5f', '#2563eb', '#60a5fa', '#93c5fd'];
+      function getColor(i) { return brandColors[i % brandColors.length]; }
+      function destroyChart(canvasId) {
+        if (!hasChart) return;
+        var el = document.getElementById(canvasId);
+        if (!el) return;
+        var inst = window.Chart.getChart && window.Chart.getChart(el);
+        if (inst) inst.destroy();
+      }
+      if (!hasChart) {
+        document.querySelector('.charts-row').innerHTML = '<div class="chart-card" style="grid-column:1/-1;"><p style="color:var(--muted);">Charts require Chart.js. Table and insights are shown above.</p></div>';
+      } else {
+        destroyChart('chartMonthly');
+        destroyChart('chartInterest');
+        destroyChart('chartEquity');
+        destroyChart('chartCost');
+        var chartOpts = { responsive: true, maintainAspectRatio: false };
+        try {
+          var labels = scenarios.map(function (s) { return s.name || 'Scenario ' + s.id; });
+          var monthlyEl = document.getElementById('chartMonthly');
+          if (monthlyEl) {
+            new Chart(monthlyEl, {
+              type: 'bar',
+              data: {
+                labels: labels,
+                datasets: [{
+                  label: 'Monthly payment (JOD)',
+                  data: scenarios.map(function (s) { return toNum(s.monthly_payment); }),
+                  backgroundColor: scenarios.map(function (_, i) { return getColor(i); })
+                }]
+              },
+              options: Object.assign({}, chartOpts, { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } })
+            });
+          }
+          var interestEl = document.getElementById('chartInterest');
+          if (interestEl) {
+            new Chart(interestEl, {
+              type: 'bar',
+              data: {
+                labels: labels,
+                datasets: [{
+                  label: 'Total interest (JOD)',
+                  data: scenarios.map(function (s) { return toNum(s.total_interest); }),
+                  backgroundColor: scenarios.map(function (_, i) { return getColor(i); })
+                }]
+              },
+              options: Object.assign({}, chartOpts, { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } })
+            });
+          }
+          var maxYears = Math.min(15, Math.max.apply(null, scenarios.map(function (s) { return s.loan_years || 20; })));
+          var yearLabels = [];
+          for (var y = 0; y <= maxYears; y++) yearLabels.push(y + ' yr');
+          var equityDatasets = scenarios.map(function (s, i) {
+            var points = [];
+            for (var y = 0; y <= maxYears; y++) {
+              points.push(equityAtYear(s.property_price, s.loan_amount, s.interest_rate, s.loan_years, y));
+            }
+            return { label: s.name || 'Scenario ' + s.id, data: points, borderColor: getColor(i), backgroundColor: getColor(i) + '20', fill: false, tension: 0.2, scenarioId: s.id };
+          });
+          var equityEl = document.getElementById('chartEquity');
+          if (equityEl) {
+            new Chart(equityEl, {
+              type: 'line',
+              data: { labels: yearLabels, datasets: equityDatasets },
+              options: Object.assign({}, chartOpts, { scales: { y: { beginAtZero: true } } })
+            });
+          }
+          var costYearLabels = yearLabels.slice();
+          var costDatasets = scenarios.map(function (s, i) {
+            var points = [];
+            for (var y = 0; y <= maxYears; y++) {
+              points.push(costAtYear(toNum(s.monthly_payment), y));
+            }
+            return { label: s.name || 'Scenario ' + s.id, data: points, borderColor: getColor(i), backgroundColor: getColor(i) + '20', fill: false, tension: 0.2, scenarioId: s.id };
+          });
+          var costEl = document.getElementById('chartCost');
+          if (costEl) {
+            new Chart(costEl, {
+              type: 'line',
+              data: { labels: costYearLabels, datasets: costDatasets },
+              options: Object.assign({}, chartOpts, { scales: { y: { beginAtZero: true } } })
+            });
+          }
+          console.log('[Compare] Charts rendered for scenario IDs:', selectedIds);
+        } catch (e) { console.warn('Charts failed:', e); }
+      }
+    })();
+    </script>
+    {% else %}
+    <!-- ========== ADD-SCENARIO COMPARE (existing) ========== -->
+    <h1>Compare financial strategies</h1>
+    <p class="subtitle">Add scenarios with different down payments, terms, and rates to compare monthly cost and total repayment.</p>
+
+    <div class="finance-card">
+      <h2>Property & assumptions</h2>
+      <div class="row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <div>
+          <label for="compare-price" style="font-size: 0.9rem; color: var(--muted);">Home price (JOD)</label>
+          <input type="number" id="compare-price" class="input" value="{{ property_price or 200000 }}" min="10000" step="5000" style="max-width: 160px;">
+        </div>
+        {% if property %}
+        <p style="margin: 0; color: var(--muted); font-size: 0.9rem;">Pre-filled from: {{ property.title }}</p>
+        {% endif %}
+      </div>
+      {% if max_monthly %}
+      <p class="help-text">Your suggested max monthly (35% of income): <strong>{{ "{:,.0f}".format(max_monthly) }} JOD</strong>. Scenarios below this are generally affordable.</p>
+      {% else %}
+      <p class="help-text">Complete your <a href="{{ url_for('finance.profile') }}">financial profile</a> to see affordability tags.</p>
+      {% endif %}
+    </div>
+
+    <div class="finance-card">
+      <h2>Add scenario</h2>
+      <div class="add-scenario-form" id="addScenarioForm">
+        <div>
+          <label for="new-name">Scenario name</label>
+          <input type="text" id="new-name" class="input" placeholder="e.g. 20% down, 25 yr" aria-label="Scenario name">
+        </div>
+        <div>
+          <label for="new-down">Down %</label>
+          <input type="number" id="new-down" class="input" value="20" min="0" max="100" step="5" aria-label="Down payment percent">
+        </div>
+        <div>
+          <label for="new-years">Years</label>
+          <input type="number" id="new-years" class="input" value="25" min="5" max="40" aria-label="Loan term years">
+        </div>
+        <div>
+          <label for="new-rate">Rate %</label>
+          <input type="number" id="new-rate" class="input" value="7.5" min="0" max="25" step="0.25" aria-label="Interest rate">
+        </div>
+        <div>
+          <button type="button" class="btn btn-primary btn-sm" id="btnAddScenario">Add</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="finance-card">
+      <h2>Comparison</h2>
+      <div id="compareGrid" class="compare-grid"></div>
+      <p id="emptyCompare" class="help-text" style="margin-top: 1rem;">Add at least one scenario above to see the comparison.</p>
+    </div>
+
+    <p style="margin-top: 1rem;">
+      <a href="{{ url_for('finance.dashboard') }}" class="btn btn-ghost">← Back to planner</a>
+      {% if property_id %}
+      <a href="{{ url_for('finance.property_plan', property_id=property_id) }}" class="btn btn-primary" style="margin-left: 0.5rem; text-decoration: none;">Plan purchase for this property</a>
+      {% endif %}
+    </p>
+    {% endif %}
+  </div>
+
+  <script src="{{ url_for('static', filename='js/finance_engine.js') }}"></script>
+  <script>
+(function () {
+  var maxMonthly = {{ max_monthly|tojson if max_monthly is not none else 'null' }};
+  var scenarios = [];
+  var priceEl = document.getElementById("compare-price");
+  var grid = document.getElementById("compareGrid");
+  var emptyEl = document.getElementById("emptyCompare");
+
+  function calcLoan(principal, ratePct, years) {
+    if (principal <= 0 || years <= 0) return { monthly: 0, total: 0, totalInterest: 0 };
+    var r = ratePct / 100 / 12;
+    var n = years * 12;
+    var monthly = r < 1e-10 ? principal / n : principal * (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+    var total = monthly * n;
+    return { monthly: monthly, total: total, totalInterest: total - principal };
+  }
+
+  function affordability(monthly) {
+    if (!maxMonthly || maxMonthly <= 0) return null;
+    if (monthly <= maxMonthly * 0.28) return "within";
+    if (monthly <= maxMonthly) return "stretch";
+    return "above";
+  }
+
+  function fmtNum(n) { return (n || 0).toLocaleString("en-JO", { maximumFractionDigits: 0 }); }
+
+  function renderScenario(s, index) {
+    var price = parseFloat(priceEl.value) || 0;
+    var downAmt = price * (s.downPct / 100);
+    var loan = Math.max(0, price - downAmt);
+    var res = calcLoan(loan, s.rate, s.years);
+    var cost5 = res.monthly * 60;
+    var cost10 = res.monthly * 120;
+    var aff = affordability(res.monthly);
+    var affClass = aff === "within" ? "afford-within" : (aff === "stretch" ? "afford-stretch" : "afford-above");
+    var affLabel = aff === "within" ? "Within budget" : (aff === "stretch" ? "Stretch" : "Above budget");
+    return '<div class="scenario-compare-card active" data-index="' + index + '">' +
+      '<h3>' + (s.name || "Scenario " + (index + 1)) + '</h3>' +
+      '<div class="row"><span class="label">Down</span><span class="val">' + s.downPct + '% · ' + fmtNum(downAmt) + ' JOD</span></div>' +
+      '<div class="row"><span class="label">Term</span><span class="val">' + s.years + ' yr @ ' + s.rate + '%</span></div>' +
+      '<div class="row"><span class="label">Monthly</span><span class="val">' + fmtNum(res.monthly) + ' JOD</span></div>' +
+      '<div class="row"><span class="label">Total repayment</span><span class="val">' + fmtNum(res.total) + ' JOD</span></div>' +
+      '<div class="row"><span class="label">Total interest</span><span class="val">' + fmtNum(res.totalInterest) + ' JOD</span></div>' +
+      '<div class="row"><span class="label">5-year cost</span><span class="val">' + fmtNum(cost5) + ' JOD</span></div>' +
+      '<div class="row"><span class="label">10-year cost</span><span class="val">' + fmtNum(cost10) + ' JOD</span></div>' +
+      (aff ? '<div class="afford-tag ' + affClass + '">' + affLabel + '</div>' : '') +
+      '<div style="margin-top:0.75rem; display:flex; gap:0.5rem;">' +
+      '<button type="button" class="btn btn-ghost btn-sm duplicate-scenario" data-index="' + index + '">Duplicate</button>' +
+      '<button type="button" class="btn btn-ghost btn-sm delete-scenario" data-index="' + index + '" style="color:var(--muted);">Delete</button>' +
+      '</div></div>';
+  }
+
+  function renderAll() {
+    if (scenarios.length === 0) {
+      grid.innerHTML = '';
+      emptyEl.style.display = 'block';
+      return;
+    }
+    emptyEl.style.display = 'none';
+    grid.innerHTML = scenarios.map(function (s, i) { return renderScenario(s, i); }).join('');
+    grid.querySelectorAll(".delete-scenario").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var idx = parseInt(btn.getAttribute("data-index"), 10);
+        scenarios.splice(idx, 1);
+        renderAll();
+      });
+    });
+    grid.querySelectorAll(".duplicate-scenario").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var idx = parseInt(btn.getAttribute("data-index"), 10);
+        var copy = { name: scenarios[idx].name + " (copy)", downPct: scenarios[idx].downPct, years: scenarios[idx].years, rate: scenarios[idx].rate };
+        scenarios.splice(idx + 1, 0, copy);
+        renderAll();
+      });
+    });
+  }
+
+  document.getElementById("btnAddScenario").addEventListener("click", function () {
+    var name = document.getElementById("new-name").value.trim() || "Scenario " + (scenarios.length + 1);
+    var downPct = Math.max(0, Math.min(100, parseFloat(document.getElementById("new-down").value) || 20));
+    var years = Math.max(5, Math.min(40, parseInt(document.getElementById("new-years").value, 10) || 25));
+    var rate = Math.max(0, Math.min(25, parseFloat(document.getElementById("new-rate").value) || 7.5));
+    scenarios.push({ name: name, downPct: downPct, years: years, rate: rate });
+    document.getElementById("new-name").value = "";
+    document.getElementById("new-down").value = downPct;
+    document.getElementById("new-years").value = years;
+    document.getElementById("new-rate").value = rate;
+    renderAll();
+  });
+
+  priceEl.addEventListener("input", renderAll);
+  renderAll();
+})();
+  </script>
+</body>
+</html>

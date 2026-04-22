@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Masar | مسار لدارك — New Scenario</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    .form-container { padding: 2rem 0; max-width: 580px; }
+    .form-card { background: var(--card); border-radius: var(--radius); padding: 1.5rem; box-shadow: var(--shadow); border: 1px solid var(--border); margin-bottom: 1rem; }
+    .form-group { margin-bottom: 1rem; }
+    .form-group label { display: block; font-weight: 500; margin-bottom: 0.35rem; color: var(--text); }
+    .form-group input, .form-group select { width: 100%; padding: 0.6rem; border-radius: 8px; border: 1px solid var(--border); box-sizing: border-box; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .btn-submit { background: var(--accent); color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
+    .btn-submit:hover { background: var(--primary2); }
+    .back-link { display: inline-block; margin-bottom: 1rem; color: var(--accent); text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="nav">
+    <div class="container nav-inner">
+      <a class="brand" href="{{ url_for('home_page') }}">
+        <div class="brand-badge">M</div>
+        <div><span class="brand-name">Masar</span><small>مسار لدارك</small></div>
+      </a>
+      <span class="pill">New scenario</span>
+    </div>
+  </div>
+
+  <div class="container form-container">
+    <a href="{{ url_for('finance_dashboard') }}" class="back-link">← Back to Finance</a>
+    <h1 style="margin-bottom: 1rem;">New financial scenario</h1>
+    <p style="color: var(--muted); margin-bottom: 1.5rem;">Create a purchase scenario with custom assumptions.</p>
+
+    <form method="post" action="{{ url_for('finance_scenario_new') }}">
+      <div class="form-card">
+        <div class="form-group">
+          <label for="name">Scenario name</label>
+          <input type="text" id="name" name="name" placeholder="e.g. Dabouq apartment" required>
+        </div>
+        <div class="form-group">
+          <label for="home_price">Home price (JOD)</label>
+          <input type="number" id="home_price" name="home_price" min="1000" step="1000" value="{{ preload_price or '' }}" required>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="down_payment_percent">Down payment %</label>
+            <input type="number" id="down_payment_percent" name="down_payment_percent" min="0" max="100" step="5" value="20">
+          </div>
+          <div class="form-group">
+            <label for="loan_term_years">Loan term (years)</label>
+            <select id="loan_term_years" name="loan_term_years">
+              <option value="10">10</option>
+              <option value="15">15</option>
+              <option value="20">20</option>
+              <option value="25" selected>25</option>
+              <option value="30">30</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="interest_rate">Interest rate (%)</label>
+          <input type="number" id="interest_rate" name="interest_rate" min="0" max="30" step="0.25" value="7.5" placeholder="7.5">
+        </div>
+      </div>
+      <button type="submit" class="btn-submit">Create & save scenario</button>
+    </form>
+  </div>
+</body>
+</html>
